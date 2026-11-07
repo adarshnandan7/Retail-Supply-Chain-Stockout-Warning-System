@@ -1,0 +1,627 @@
+{
+  "statements": [
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.recommendation_id IS 'Store/SKU key (store_id-sku_id); primary key synced"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.as_of_date IS 'Business date the risk was scored for (last closed sales d"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.risk_score IS '0-100. 100 x stockout probability x (0.6 + 0.4 x value wei"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.risk_tier IS 'Critical (>=70), High (>=45), Medium (>=25), Low'"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.risk_rank IS 'Rank across all store/SKUs by risk score then revenue at ri"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.stockout_probability IS 'Probability that demand exceeds on-hand + projec"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.lead_time_window_days IS 'Replenishment window: p90 actual supplier lead "
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.forecast_demand_window IS 'Forecast units over the replenishment window f"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.baseline_demand_window IS 'Seasonal-naive \\'usual\\' demand over the same "
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.on_hand_units IS 'End-of-day on-hand units on the as-of date'"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.inbound_units_in_window IS 'Open PO units projected to arrive inside the "
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.days_of_cover IS 'On-hand units divided by average forecast daily demand "
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.projected_stockout_in_days IS 'First day (1-28) on which cumulative forec"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.expected_lost_units IS 'Expected unmet demand at the end of the window (n"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.revenue_at_risk IS 'Expected lost units x unit price (USD)'"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.primary_driver IS 'Largest quantified driver: Upcoming promotion, Holiday"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.driver_details IS 'All quantified drivers in plain language'"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.recommended_action IS 'EXPEDITE, TRANSFER, REORDER or MONITOR. Decision s"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.recommended_qty IS 'Suggested units for the action (case-pack rounded for"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.action_source_id IS 'Supplier to expedite/reorder from, or donor store fo"
+    },
+    {
+      "ok": true,
+      "sql": "COMMENT ON COLUMN serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations.planner_explanation IS 'Two-sentence planner note (LLM for Critical/High,"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.gold_daily_store_sku_sales ALTER COLUMN is_stockout COMMENT 'True when end-of-day on han"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.gold_daily_store_sku_sales ALTER COLUMN units_sold COMMENT 'Units sold (0 when no POS re"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.gold_daily_store_sku_sales ALTER COLUMN on_promo COMMENT 'SKU was on promotion at this s"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.gold_daily_store_sku_sales ALTER COLUMN days_to_next_holiday COMMENT 'Calendar days unti"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.demand_forecast SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal', '"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.silver_suppliers SET TAGS ('domain' = 'supply_chain', 'layer' = 'silver', 'sensitivity' "
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations_online SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = '"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.bronze_pos_sales SET TAGS ('domain' = 'supply_chain', 'layer' = 'bronze', 'sensitivity' = "
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.silver_products SET TAGS ('domain' = 'supply_chain', 'layer' = 'silver', 'sensitivity' ="
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.silver_holidays SET TAGS ('domain' = 'supply_chain', 'layer' = 'silver', 'sensitivity' ="
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.risk_explanations SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal',"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.gold_promo_store_sku_daily SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensi"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.v_planner_risk_queue SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.bronze_suppliers SET TAGS ('domain' = 'supply_chain', 'layer' = 'bronze', 'sensitivity' = "
+    },
+    {
+      "ok": true,
+      "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.bronze_holidays SET TAGS ('domain' = 'supply_chain', 'layer' = 'bronze', 'sensitivity' = '"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.mv_inventory_risk SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal', "
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.risk_backtest SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal', 'co"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.gold_inbound_po_pipeline SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensiti"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.gold_po_lines SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'in"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.bronze_stores SET TAGS ('domain' = 'supply_chain', 'layer' = 'bronze', 'sensitivity' = 'in"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.gold_daily_store_sku_sales SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensi"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.mv_forecast_accuracy SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.mv_alert_backtest SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal', "
+    },
+    {
+      "ok": true,
+      "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.silver_inventory_snapshots SET TAGS ('domain' = 'supply_chain', 'layer' = 'silver', 'sensi"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.gold_supplier_lead_time_stats SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'se"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.bronze_inventory_snapshots SET TAGS ('domain' = 'supply_chain', 'layer' = 'bronze', 'sensi"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.bronze_po_events SET TAGS ('domain' = 'supply_chain', 'layer' = 'bronze', 'sensitivity' = "
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.forecast_backtest SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal',"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.risk_scores SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal', 'cont"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.silver_po_events SET TAGS ('domain' = 'supply_chain', 'layer' = 'silver', 'sensitivity' = "
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.silver_promotions SET TAGS ('domain' = 'supply_chain', 'layer' = 'silver', 'sensitivity'"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.bronze_promotions SET TAGS ('domain' = 'supply_chain', 'layer' = 'bronze', 'sensitivity' ="
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'interna"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.mv_stockout_history SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal'"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.bronze_products SET TAGS ('domain' = 'supply_chain', 'layer' = 'bronze', 'sensitivity' = '"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.gold_current_inventory_position SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', '"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.silver_pos_sales SET TAGS ('domain' = 'supply_chain', 'layer' = 'silver', 'sensitivity' = "
+    },
+    {
+      "ok": true,
+      "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.silver_stores SET TAGS ('domain' = 'supply_chain', 'layer' = 'silver', 'sensitivity' = '"
+    },
+    {
+      "ok": true,
+      "sql": "CREATE OR REPLACE FUNCTION serverless_stable_3vku19_catalog.inventory_risk.can_see_region(region STRING) RETURNS BOOLEAN COMMENT 'Row filter: admins and chain-w"
+    },
+    {
+      "ok": true,
+      "sql": "CREATE OR REPLACE FUNCTION serverless_stable_3vku19_catalog.inventory_risk.can_see_financials() RETURNS BOOLEAN COMMENT 'Column mask helper: revenue exposure is"
+    },
+    {
+      "ok": true,
+      "sql": "CREATE OR REPLACE VIEW serverless_stable_3vku19_catalog.inventory_risk.v_planner_risk_queue COMMENT 'Governed planner risk queue: region-filtered rows, revenue "
+    },
+    {
+      "ok": true,
+      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.v_planner_risk_queue SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'governance' = 'row_filte"
+    },
+    {
+      "ok": true,
+      "sql": "GRANT USE SCHEMA ON SCHEMA serverless_stable_3vku19_catalog.inventory_risk TO `account users`"
+    },
+    {
+      "ok": true,
+      "sql": "GRANT SELECT ON VIEW serverless_stable_3vku19_catalog.inventory_risk.v_planner_risk_queue TO `account users`"
+    },
+    {
+      "ok": true,
+      "sql": "GRANT EXECUTE ON FUNCTION serverless_stable_3vku19_catalog.inventory_risk.can_see_region TO `account users`"
+    },
+    {
+      "ok": true,
+      "sql": "GRANT EXECUTE ON FUNCTION serverless_stable_3vku19_catalog.inventory_risk.can_see_financials TO `account users`"
+    },
+    {
+      "ok": true,
+      "sql": "GRANT USE CATALOG ON CATALOG serverless_stable_3vku19_catalog TO `f9d7ebf5-8461-4f27-9cf0-7ee975da796a`"
+    },
+    {
+      "ok": true,
+      "sql": "GRANT USE SCHEMA ON SCHEMA serverless_stable_3vku19_catalog.inventory_risk TO `f9d7ebf5-8461-4f27-9cf0-7ee975da796a`"
+    },
+    {
+      "ok": true,
+      "sql": "GRANT SELECT ON SCHEMA serverless_stable_3vku19_catalog.inventory_risk TO `f9d7ebf5-8461-4f27-9cf0-7ee975da796a`"
+    }
+  ],
+  "tags": [
+    {
+      "table_name": "bronze_holidays",
+      "tag_name": "layer",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_holidays",
+      "tag_name": "product_stage",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_inventory_snapshots",
+      "tag_name": "layer",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_inventory_snapshots",
+      "tag_name": "product_stage",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_po_events",
+      "tag_name": "layer",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_po_events",
+      "tag_name": "product_stage",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_pos_sales",
+      "tag_name": "layer",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_pos_sales",
+      "tag_name": "product_stage",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_products",
+      "tag_name": "layer",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_products",
+      "tag_name": "product_stage",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_promotions",
+      "tag_name": "layer",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_promotions",
+      "tag_name": "product_stage",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_stores",
+      "tag_name": "layer",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_stores",
+      "tag_name": "product_stage",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_suppliers",
+      "tag_name": "layer",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "bronze_suppliers",
+      "tag_name": "product_stage",
+      "tag_value": "bronze"
+    },
+    {
+      "table_name": "demand_forecast",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "demand_forecast",
+      "tag_name": "product_stage",
+      "tag_value": "ml"
+    },
+    {
+      "table_name": "forecast_backtest",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "forecast_backtest",
+      "tag_name": "product_stage",
+      "tag_value": "ml"
+    },
+    {
+      "table_name": "gold_current_inventory_position",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "gold_current_inventory_position",
+      "tag_name": "product_stage",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "gold_daily_store_sku_sales",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "gold_daily_store_sku_sales",
+      "tag_name": "product_stage",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "gold_inbound_po_pipeline",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "gold_inbound_po_pipeline",
+      "tag_name": "product_stage",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "gold_po_lines",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "gold_po_lines",
+      "tag_name": "product_stage",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "gold_promo_store_sku_daily",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "gold_promo_store_sku_daily",
+      "tag_name": "product_stage",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "gold_supplier_lead_time_stats",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "gold_supplier_lead_time_stats",
+      "tag_name": "product_stage",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "mv_alert_backtest",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "mv_alert_backtest",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
+      "table_name": "mv_forecast_accuracy",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "mv_forecast_accuracy",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
+      "table_name": "mv_inventory_risk",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "mv_inventory_risk",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
+      "table_name": "mv_stockout_history",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "mv_stockout_history",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
+      "table_name": "risk_backtest",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "risk_backtest",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
+      "table_name": "risk_explanations",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "risk_explanations",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
+      "table_name": "risk_recommendations",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "risk_recommendations",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
+      "table_name": "risk_recommendations_online",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "risk_recommendations_online",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
+      "table_name": "risk_scores",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "risk_scores",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
+      "table_name": "silver_holidays",
+      "tag_name": "layer",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_holidays",
+      "tag_name": "product_stage",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_inventory_snapshots",
+      "tag_name": "layer",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_inventory_snapshots",
+      "tag_name": "product_stage",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_po_events",
+      "tag_name": "layer",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_po_events",
+      "tag_name": "product_stage",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_pos_sales",
+      "tag_name": "layer",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_pos_sales",
+      "tag_name": "product_stage",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_products",
+      "tag_name": "layer",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_products",
+      "tag_name": "product_stage",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_promotions",
+      "tag_name": "layer",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_promotions",
+      "tag_name": "product_stage",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_stores",
+      "tag_name": "layer",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_stores",
+      "tag_name": "product_stage",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_suppliers",
+      "tag_name": "layer",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "silver_suppliers",
+      "tag_name": "product_stage",
+      "tag_value": "silver"
+    },
+    {
+      "table_name": "v_planner_risk_queue",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    }
+  ],
+  "view_check_as_admin": [
+    {
+      "visible_rows": 19996,
+      "rows_with_revenue_visible": 19996
+    }
+  ]
+}

@@ -1,0 +1,153 @@
+{
+  "holdout_origin": "2026-10-09",
+  "train_rows": 1886854,
+  "holdout_rows_scored": 534339,
+  "baseline": {
+    "holdout_wape": 0.5291,
+    "holdout_bias": 0.0576,
+    "holdout_mae": 3.2539,
+    "holdout_wape_promo_days": 0.5487,
+    "holdout_wape_non_promo_days": 0.5278
+  },
+  "lightgbm": {
+    "holdout_wape": 0.4547,
+    "holdout_bias": 0.0155,
+    "holdout_mae": 2.7959,
+    "holdout_wape_promo_days": 0.4011,
+    "holdout_wape_non_promo_days": 0.4583,
+    "best_iteration": 210.0
+  },
+  "wape_reduction_pct": 14.1,
+  "winner": "lightgbm",
+  "registered_model": "serverless_stable_3vku19_catalog.inventory_risk.demand_forecast",
+  "registered_version": 2,
+  "mlflow_runs": {
+    "baseline": "180788f3dbce49efb830faec6ec85dad",
+    "lightgbm": "218d0ae089fa4f7faf61c866135e1ba0"
+  },
+  "experiment": "/Users/adarsh.nandan@databricks.com/inventory-risk-radar-demand-forecast",
+  "by_category": [
+    {
+      "category": "Bakery",
+      "baseline_wape": 0.4903,
+      "baseline_bias": -0.0233,
+      "lgbm_wape": 0.4263,
+      "lgbm_bias": -0.0401,
+      "wape_reduction_pct": 13.1
+    },
+    {
+      "category": "Beverages",
+      "baseline_wape": 0.5754,
+      "baseline_bias": 0.2092,
+      "lgbm_wape": 0.461,
+      "lgbm_bias": 0.103,
+      "wape_reduction_pct": 19.9
+    },
+    {
+      "category": "Dairy & Eggs",
+      "baseline_wape": 0.4908,
+      "baseline_bias": 0.0089,
+      "lgbm_wape": 0.4314,
+      "lgbm_bias": -0.0087,
+      "wape_reduction_pct": 12.1
+    },
+    {
+      "category": "Fresh Produce",
+      "baseline_wape": 0.4784,
+      "baseline_bias": 0.0738,
+      "lgbm_wape": 0.4105,
+      "lgbm_bias": 0.0265,
+      "wape_reduction_pct": 14.2
+    },
+    {
+      "category": "Frozen",
+      "baseline_wape": 0.5523,
+      "baseline_bias": 0.0853,
+      "lgbm_wape": 0.481,
+      "lgbm_bias": 0.0372,
+      "wape_reduction_pct": 12.9
+    },
+    {
+      "category": "Household",
+      "baseline_wape": 0.6911,
+      "baseline_bias": -0.0042,
+      "lgbm_wape": 0.6212,
+      "lgbm_bias": -0.0118,
+      "wape_reduction_pct": 10.1
+    },
+    {
+      "category": "Meat & Seafood",
+      "baseline_wape": 0.584,
+      "baseline_bias": 0.092,
+      "lgbm_wape": 0.4942,
+      "lgbm_bias": 0.0317,
+      "wape_reduction_pct": 15.4
+    },
+    {
+      "category": "Pantry & Baking",
+      "baseline_wape": 0.5657,
+      "baseline_bias": -0.0024,
+      "lgbm_wape": 0.497,
+      "lgbm_bias": -0.0391,
+      "wape_reduction_pct": 12.1
+    },
+    {
+      "category": "Personal Care",
+      "baseline_wape": 0.7953,
+      "baseline_bias": -0.0252,
+      "lgbm_wape": 0.7288,
+      "lgbm_bias": -0.0223,
+      "wape_reduction_pct": 8.4
+    },
+    {
+      "category": "Snacks",
+      "baseline_wape": 0.5363,
+      "baseline_bias": 0.0296,
+      "lgbm_wape": 0.4578,
+      "lgbm_bias": 0.0123,
+      "wape_reduction_pct": 14.6
+    }
+  ],
+  "top_features": [
+    {
+      "feature": "r28",
+      "gain": 43800681.81296635
+    },
+    {
+      "feature": "r7",
+      "gain": 2118397.924232483
+    },
+    {
+      "feature": "discount_pct",
+      "gain": 1528948.4356908798
+    },
+    {
+      "feature": "target_dow",
+      "gain": 891901.015917778
+    },
+    {
+      "feature": "sn4_dow",
+      "gain": 597524.0454559326
+    },
+    {
+      "feature": "r28_std",
+      "gain": 343208.0067152977
+    },
+    {
+      "feature": "days_to_next_holiday",
+      "gain": 273562.22022151947
+    },
+    {
+      "feature": "category_code",
+      "gain": 183947.70071792603
+    },
+    {
+      "feature": "next_holiday_code",
+      "gain": 160181.19604492188
+    },
+    {
+      "feature": "on_promo",
+      "gain": 85768.25899600983
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "llm_endpoint": "databricks-claude-haiku-5-5",
+  "explanations": 400,
+  "non_empty": 400,
+  "samples": [
+    {
+      "risk_rank": 1,
+      "store_name": "Harvest Lane Stonebrook Superstore II",
+      "sku_name": "Meadow Fresh Green Beans 2ct",
+      "risk_score": 100,
+      "risk_tier": "Critical",
+      "recommended_action": "EXPEDITE",
+      "recommended_qty": 348,
+      "planner_explanation": "Meadow Fresh Green Beans 2ct at Harvest Lane Stonebrook Superstore II will likely run out because only 46 units are on hand against 255.3 units of forecast demand in the 3-day window, with no inbound arriving in that window, since the 348 late units are now projected in 5 days and demand is running above usual (230.2). Expedite 348 units by asking Riverbend Fresh Supply Co. to speed up the delayed PO units."
+    },
+    {
+      "risk_rank": 2,
+      "store_name": "Harvest Lane Oakhurst Superstore II",
+      "sku_name": "Harvest Lane Heavy Cream Large",
+      "risk_score": 100,
+      "risk_tier": "Critical",
+      "recommended_action": "EXPEDITE",
+      "recommended_qty": 138,
+      "planner_explanation": "Harvest Lane Heavy Cream Large at Harvest Lane Oakhurst Superstore II has 0 units on hand and no inbound units arriving within the 3-day window, while forecast demand of 139.7 units (usual 88.9) is driven by a 51-unit promotion lift and 138 late inbound units now projected to arrive in 4 days. Expedite 138 units by asking Summit Dairy Wholesale to accelerate the delayed PO units."
+    },
+    {
+      "risk_rank": 3,
+      "store_name": "Harvest Lane Yarrow Superstore",
+      "sku_name": "Crestline Sweet Potatoes Value Pack",
+      "risk_score": 100,
+      "risk_tier": "Critical",
+      "recommended_action": "EXPEDITE",
+      "recommended_qty": 192,
+      "planner_explanation": "Forecast demand of 425.1 units over the next 4 days far exceeds the 86 units on hand, driven by a 248-unit promotion lift and 192 inbound units that are late and now projected to arrive in 2 days. Expedite 192 units by asking Pacific Fresh Foods to expedite the delayed PO units."
+    },
+    {
+      "risk_rank": 4,
+      "store_name": "Harvest Lane Thornbury Standard II",
+      "sku_name": "Meadow Fresh Green Beans 2ct",
+      "risk_score": 100,
+      "risk_tier": "Critical",
+      "recommended_action": "EXPEDITE",
+      "recommended_qty": 204,
+      "planner_explanation": "Harvest Lane Thornbury Standard II has only 53 units on hand against 164.5 units of forecast demand in the 3-day window, and none of the 204 inbound units arrive in that window because the overdue PO is now projected to land in 4 days. The planner should ask Riverbend Fresh Supply Co. to expedite the 204 delayed PO units."
+    },
+    {
+      "risk_rank": 5,
+      "store_name": "Harvest Lane Stonebrook Superstore II",
+      "sku_name": "Harvest Lane Peanut Butter Organic",
+      "risk_score": 100,
+      "risk_tier": "Critical",
+      "recommended_action": "REORDER",
+      "recommended_qty": 96,
+      "planner_explanation": "With 0 units on hand, the 372 inbound units are late and now projected to arrive in 1 day (1 PO line overdue, supplier on-time 83% over the last 30 days), while forecast demand of 450.9 units over the 13-day window exceeds the usual 234.3 because of an upcoming promotion adding 217 units. Place an additional order of 96 units with Summit Pantry Foods (case pack 6)."
+    },
+    {
+      "risk_rank": 6,
+      "store_name": "Harvest Lane Dunmore Superstore",
+      "sku_name": "Crestline Sweet Potatoes Value Pack",
+      "risk_score": 100,
+      "risk_tier": "Critical",
+      "recommended_action": "EXPEDITE",
+      "recommended_qty": 192,
+      "planner_explanation": "With zero units on hand, the 192 inbound units are running late (now projected in 2 days), while forecast demand of 296.3 units over the 4-day window is inflated by an upcoming promotion adding 161 units versus usual. Expedite 192 units by asking Pacific Fresh Foods to expedite the delayed PO units."
+    },
+    {
+      "risk_rank": 7,
+      "store_name": "Harvest Lane Juniper Bay Superstore II",
+      "sku_name": "Meadow Fresh 2% Milk Organic",
+      "risk_score": 100,
+      "risk_tier": "Critical",
+      "recommended_action": "EXPEDITE",
+      "recommended_qty": 84,
+      "planner_explanation": "Meadow Fresh 2% Milk Organic is likely to run out because 84 inbound units are late and now projected to arrive in 6 days, while on-hand stock of 46 units and zero inbound in the window cannot cover forecast demand of 141.1 units. Expedite 84 units by asking Summit Dairy Wholesale to speed up the delayed PO, since its on-time rate was 58% over the last 30 days."
+    },
+    {
+      "risk_rank": 8,
+      "store_name": "Harvest Lane Riverside Standard",
+      "sku_name": "Green Valley Oat Milk Value Pack",
+      "risk_score": 100,
+      "risk_tier": "Critical",
+      "recommended_action": "EXPEDITE",
+      "recommended_qty": 40,
+      "planner_explanation": "The Green Valley Oat Milk Value Pack at Harvest Lane Riverside Standard is likely to run out because 16 units on hand fall well short of 74.5 units of forecast demand in the 5-day window, and the 40 inbound units are late and not projected to arrive for 6 days. Expedite 40 units by asking Summit Dairy Wholesale to rush the delayed PO units so they arrive within the window."
+    },
+    {
+      "risk_rank": 9,
+      "store_name": "Harvest Lane Fairhaven Standard II",
+      "sku_name": "Green Valley Oat Milk Value Pack",
+      "risk_score": 100,
+      "risk_tier": "Critical",
+      "recommended_action": "EXPEDITE",
+      "recommended_qty": 60,
+      "planner_explanation": "The Green Valley Oat Milk Value Pack at Harvest Lane Fairhaven Standard II will likely run out because only 13 units are on hand, none arrive within the 5-day window, and its 60 late inbound units are now projected in 6 days against 70.7 units of forecast demand. Expedite 60 units by asking Summit Dairy Wholesale to speed up the delayed PO units."
+    },
+    {
+      "risk_rank": 10,
+      "store_name": "Harvest Lane Oakhurst Superstore II",
+      "sku_name": "Blue Harbor Large Eggs 2ct",
+      "risk_score": 100,
+      "risk_tier": "Critical",
+      "recommended_action": "EXPEDITE",
+      "recommended_qty": 42,
+      "planner_explanation": "Blue Harbor Large Eggs 2ct at Harvest Lane Oakhurst Superstore II will likely run out because 16 units on hand and no inbound stock in the window cannot cover 75.5 forecast units, with 42 late units now projected in 6 days and supplier on-time performance at 58% over the last 30 days. Expedite 42 units by asking Summit Dairy Wholesale to speed up the delayed PO."
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "synced_table": "serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations_online",
+  "pipeline_id": "5cbc13ff-b5aa-4181-9ae7-01fa8725a851",
+  "sync_state": "COMPLETED",
+  "exported_to_delta": {
+    "planner_action_history": 1,
+    "planner_note_history": 1,
+    "planner_watchlists": 1
+  },
+  "synced_rows_by_tier": [
+    {
+      "risk_tier": "Low",
+      "rows": 16832
+    },
+    {
+      "risk_tier": "High",
+      "rows": 1530
+    },
+    {
+      "risk_tier": "Medium",
+      "rows": 826
+    },
+    {
+      "risk_tier": "Critical",
+      "rows": 808
+    }
+  ],
+  "point_query_ms": 8.9,
+  "top_metro_north": [
+    {
+      "risk_rank": 9,
+      "store_name": "Harvest Lane Fairhaven Standard II",
+      "sku_name": "Green Valley Oat Milk Value Pack",
+      "risk_score": 100,
+      "recommended_action": "EXPEDITE"
+    },
+    {
+      "risk_rank": 14,
+      "store_name": "Harvest Lane Kingsley Standard",
+      "sku_name": "Crestline Cheddar Block",
+      "risk_score": 100,
+      "recommended_action": "EXPEDITE"
+    },
+    {
+      "risk_rank": 16,
+      "store_name": "Harvest Lane Kingsley Standard II",
+      "sku_name": "Golden Fields Heavy Cream",
+      "risk_score": 100,
+      "recommended_action": "EXPEDITE"
+    },
+    {
+      "risk_rank": 29,
+      "store_name": "Harvest Lane Ashford Neighborhood",
+      "sku_name": "Golden Fields Heavy Cream",
+      "risk_score": 100,
+      "recommended_action": "EXPEDITE"
+    },
+    {
+      "risk_rank": 34,
+      "store_name": "Harvest Lane Ashford Neighborhood",
+      "sku_name": "Crestline Cheddar Block",
+      "risk_score": 100,
+      "recommended_action": "EXPEDITE"
+    },
+    {
+      "risk_rank": 37,
+      "store_name": "Harvest Lane Upton Standard",
+      "sku_name": "Golden Fields Heavy Cream",
+      "risk_score": 100,
+      "recommended_action": "EXPEDITE"
+    },
+    {
+      "risk_rank": 40,
+      "store_name": "Harvest Lane Kingsley Standard II",
+      "sku_name": "Crestline Greek Yogurt",
+      "risk_score": 100,
+      "recommended_action": "EXPEDITE"
+    },
+    {
+      "risk_rank": 45,
+      "store_name": "Harvest Lane Fairhaven Standard II",
+      "sku_name": "Sunrise Ground Beef Organic",
+      "risk_score": 100,
+      "recommended_action": "EXPEDITE"
+    },
+    {
+      "risk_rank": 50,
+      "store_name": "Harvest Lane Fairhaven Standard II",
+      "sku_name": "Crestline Greek Yogurt",
+      "risk_score": 100,
+      "recommended_action": "EXPEDITE"
+    },
+    {
+      "risk_rank": 51,
+      "store_name": "Harvest Lane Kingsley Standard II",
+      "sku_name": "Crestline Cheddar Block",
+      "risk_score": 100,
+      "recommended_action": "EXPEDITE"
+    }
+  ],
+  "planner_kpis_from_delta": [
+    {
+      "decisions": 1,
+      "overrides": 0,
+      "override_rate": 0.0,
+      "planners": 1,
+      "median_hours_to_action": "-0.26"
+    }
+  ]
+}

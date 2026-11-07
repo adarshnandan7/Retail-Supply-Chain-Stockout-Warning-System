@@ -1,0 +1,74 @@
+{
+  "model_version": 2,
+  "summary": {
+    "rows": 559888,
+    "series": 19996,
+    "first_day": "2026-11-07",
+    "last_day": "2026-12-04",
+    "total_forecast_units": 3581745.0,
+    "total_baseline_units": 3483939.0,
+    "promo_day_uplift_vs_baseline": 2.123
+  },
+  "by_category": [
+    {
+      "category": "Meat & Seafood",
+      "forecast_units_28d": 206409.0,
+      "baseline_units_28d": 178666.0,
+      "uplift_vs_baseline": 0.155
+    },
+    {
+      "category": "Pantry & Baking",
+      "forecast_units_28d": 403811.0,
+      "baseline_units_28d": 356377.0,
+      "uplift_vs_baseline": 0.133
+    },
+    {
+      "category": "Bakery",
+      "forecast_units_28d": 375489.0,
+      "baseline_units_28d": 343591.0,
+      "uplift_vs_baseline": 0.093
+    },
+    {
+      "category": "Dairy & Eggs",
+      "forecast_units_28d": 408622.0,
+      "baseline_units_28d": 389874.0,
+      "uplift_vs_baseline": 0.048
+    },
+    {
+      "category": "Household",
+      "forecast_units_28d": 93392.0,
+      "baseline_units_28d": 91623.0,
+      "uplift_vs_baseline": 0.019
+    },
+    {
+      "category": "Snacks",
+      "forecast_units_28d": 400992.0,
+      "baseline_units_28d": 393951.0,
+      "uplift_vs_baseline": 0.018
+    },
+    {
+      "category": "Personal Care",
+      "forecast_units_28d": 53813.0,
+      "baseline_units_28d": 52906.0,
+      "uplift_vs_baseline": 0.017
+    },
+    {
+      "category": "Fresh Produce",
+      "forecast_units_28d": 1044412.0,
+      "baseline_units_28d": 1052865.0,
+      "uplift_vs_baseline": -0.008
+    },
+    {
+      "category": "Frozen",
+      "forecast_units_28d": 252349.0,
+      "baseline_units_28d": 257645.0,
+      "uplift_vs_baseline": -0.021
+    },
+    {
+      "category": "Beverages",
+      "forecast_units_28d": 342456.0,
+      "baseline_units_28d": 366441.0,
+      "uplift_vs_baseline": -0.065
+    }
+  ]
+}

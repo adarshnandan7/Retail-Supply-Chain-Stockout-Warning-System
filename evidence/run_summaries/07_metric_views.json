@@ -1,0 +1,89 @@
+{
+  "mv_inventory_risk": [
+    {
+      "region": "Valley",
+      "critical_high_alerts": 506,
+      "revenue_at_risk_critical_high": 15128.0,
+      "median_days_of_cover": 6.1,
+      "excess_rate": 0.0015
+    },
+    {
+      "region": "Lakeshore",
+      "critical_high_alerts": 495,
+      "revenue_at_risk_critical_high": 12337.0,
+      "median_days_of_cover": 6.0,
+      "excess_rate": 0.0013
+    },
+    {
+      "region": "Coastal",
+      "critical_high_alerts": 474,
+      "revenue_at_risk_critical_high": 9498.0,
+      "median_days_of_cover": 6.5,
+      "excess_rate": 0.0033
+    },
+    {
+      "region": "Metro North",
+      "critical_high_alerts": 438,
+      "revenue_at_risk_critical_high": 8423.0,
+      "median_days_of_cover": 6.4,
+      "excess_rate": 0.003
+    },
+    {
+      "region": "Metro South",
+      "critical_high_alerts": 425,
+      "revenue_at_risk_critical_high": 7633.0,
+      "median_days_of_cover": 6.4,
+      "excess_rate": 0.0023
+    }
+  ],
+  "mv_forecast_accuracy": [
+    {
+      "on_promo": "Promotion day",
+      "model_wape": 0.4011,
+      "baseline_wape": 0.5487,
+      "wape_improvement_pct": 26.9
+    },
+    {
+      "on_promo": "Regular day",
+      "model_wape": 0.4583,
+      "baseline_wape": 0.5278,
+      "wape_improvement_pct": 13.2
+    }
+  ],
+  "mv_stockout_history": [
+    {
+      "sale_month": "2026-06-01 00:00:00",
+      "stockout_rate": 0.0419
+    },
+    {
+      "sale_month": "2026-07-01 00:00:00",
+      "stockout_rate": 0.0422
+    },
+    {
+      "sale_month": "2026-08-01 00:00:00",
+      "stockout_rate": 0.0385
+    },
+    {
+      "sale_month": "2026-09-01 00:00:00",
+      "stockout_rate": 0.0405
+    },
+    {
+      "sale_month": "2026-10-01 00:00:00",
+      "stockout_rate": 0.0395
+    },
+    {
+      "sale_month": "2026-11-01 00:00:00",
+      "stockout_rate": 0.0588
+    }
+  ],
+  "mv_alert_backtest": [
+    {
+      "radar_alerts": 1172,
+      "radar_precision": 0.6246,
+      "radar_recall": 0.3834,
+      "rule_alerts": 5372,
+      "rule_precision": 0.2042,
+      "rule_recall": 0.5746
+    }
+  ]
+}

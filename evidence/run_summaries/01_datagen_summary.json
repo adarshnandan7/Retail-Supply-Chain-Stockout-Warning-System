@@ -1,0 +1,62 @@
+{
+  "as_of_date": "2026-11-06",
+  "history_start": "2024-11-07",
+  "stores": 50,
+  "skus": 400,
+  "store_sku_series": 20000,
+  "suppliers": 24,
+  "promotions": 4433,
+  "upcoming_promotions": 226,
+  "pos_sales_rows_written": 12688631,
+  "inventory_snapshot_rows_written": 14600000,
+  "po_events_written": 4225358,
+  "open_po_lines_at_as_of": 14548,
+  "simulated_eod_stockout_rate": 0.0413,
+  "stockout_rate_last_28d": 0.0454,
+  "disrupted_suppliers": [
+    "V004",
+    "V016"
+  ],
+  "planted_defects": {
+    "sales_negative_units": 6409,
+    "sales_null_sku": 2557,
+    "sales_duplicates": 12674,
+    "inventory_negative_on_hand": 2916,
+    "po_missing_qty": 646
+  },
+  "files": {
+    "products": [
+      "products.csv"
+    ],
+    "stores": [
+      "stores.csv"
+    ],
+    "suppliers": [
+      "suppliers.csv"
+    ],
+    "sales": [
+      "pos_daily_sales_2024-11.csv",
+      "pos_daily_sales_2024-12.csv",
+      "pos_daily_sales_2025-01.csv",
+      "..."
+    ],
+    "inventory": [
+      "inventory_snapshot_2024-11.json",
+      "inventory_snapshot_2024-12.json",
+      "inventory_snapshot_2025-01.json",
+      "..."
+    ],
+    "purchase_orders": [
+      "po_events_2024-11.json",
+      "po_events_2024-12.json",
+      "po_events_2025-01.json",
+      "..."
+    ],
+    "promotions": [
+      "promotions.csv"
+    ],
+    "calendar": [
+      "holidays.csv"
+    ]
+  }
+}

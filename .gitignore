@@ -1,0 +1,8 @@
+.databricks/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.env
+*.egg-info/
+node_modules/

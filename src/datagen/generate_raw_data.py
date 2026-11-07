@@ -433,7 +433,7 @@ created = pd.DataFrame({
     "event_ts": (day_ts("order_day") + pd.Timedelta(hours=21)).dt.strftime("%Y-%m-%dT%H:%M:%S"),
     "po_line_id": po_df["po_line_id"], "store_id": po_df["store_id"], "sku_id": po_df["sku_id"], "supplier_id": po_df["supplier_id"],
     "order_qty": po_df["qty"].astype("Int64"), "expected_delivery_date": day_ts("expected_day").dt.strftime("%Y-%m-%d"),
-    "received_qty": pd.Series([pd.NA] * len(po_df), dtype="Int64"),
+    "received_qty": pd.Series([pd.NA] * len(po_df), dtype="Int64", index=po_df.index),
 })
 miss = rng.random(len(created)) < 0.0003
 created.loc[miss, "order_qty"] = pd.NA
@@ -444,11 +444,12 @@ received = pd.DataFrame({
     "event_type": "PO_RECEIVED",
     "event_ts": (pd.to_datetime(start) + pd.to_timedelta(rec["actual_day"], unit="D") + pd.Timedelta(hours=6)).dt.strftime("%Y-%m-%dT%H:%M:%S"),
     "po_line_id": rec["po_line_id"], "store_id": rec["store_id"], "sku_id": rec["sku_id"], "supplier_id": rec["supplier_id"],
-    "order_qty": pd.Series([pd.NA] * len(rec), dtype="Int64"),
+    "order_qty": pd.Series([pd.NA] * len(rec), dtype="Int64", index=rec.index),
     "expected_delivery_date": None,
     "received_qty": rec["qty"].astype("Int64"),
 })
 events = pd.concat([created, received], ignore_index=True)
+assert events["event_ts"].notna().all() and len(events) == len(created) + len(received)
 events["_m"] = events["event_ts"].str[:7]
 for m, g in events.groupby("_m"):
     g.drop(columns="_m").to_json(f"{LANDING}/purchase_orders/po_events_{m}.json", orient="records", lines=True)

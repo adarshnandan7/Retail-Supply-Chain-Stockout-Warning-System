@@ -1,0 +1,23 @@
+resources:
+  schemas:
+    inventory_risk:
+      catalog_name: ${var.catalog}
+      name: ${var.schema}
+      comment: "Harvest Lane Markets - retail inventory risk radar (raw landing, bronze/silver/gold, forecasts, risk scores)"
+      properties:
+        domain: supply_chain
+        data_owner: replenishment_planning
+
+  volumes:
+    landing:
+      catalog_name: ${var.catalog}
+      schema_name: ${resources.schemas.inventory_risk.name}
+      name: landing
+      volume_type: MANAGED
+      comment: "Raw file drops from POS, inventory, purchasing, merchandising and supplier systems (synthetic)"
+    evidence:
+      catalog_name: ${var.catalog}
+      schema_name: ${resources.schemas.inventory_risk.name}
+      name: evidence
+      volume_type: MANAGED
+      comment: "Text run summaries written by each job task (execution evidence)"

@@ -1,0 +1,37 @@
+# Retail Inventory Risk Radar - Databricks Asset Bundle
+bundle:
+  name: retail_inventory_risk_radar
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Unity Catalog catalog for all project assets
+    default: serverless_stable_3vku19_catalog
+  schema:
+    description: Schema holding raw volume, bronze/silver/gold tables, model and metric views
+    default: inventory_risk
+  warehouse_id:
+    description: Serverless SQL warehouse used by dashboard, Genie and the app
+    default: 210233ae7af4e4bb
+  lakebase_project:
+    description: Lakebase Autoscaling project id for operational serving
+    default: inventory-risk-radar
+  llm_endpoint:
+    description: Foundation model endpoint used for planner explanations
+    default: databricks-claude-haiku-5-5
+  as_of_date:
+    description: Business "today" for the synthetic retailer (last closed sales day)
+    default: "2026-11-06"
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://fevm-serverless-stable-3vku19.cloud.databricks.com
+      profile: serverless-stable-3vku19
+    presets:
+      name_prefix: ""
+      trigger_pause_status: PAUSED

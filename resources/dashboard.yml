@@ -1,0 +1,10 @@
+resources:
+  dashboards:
+    inventory_risk_dashboard:
+      display_name: "Harvest Lane - Inventory Risk Radar"
+      file_path: ../src/dashboards/inventory_risk.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      embed_credentials: true
+      permissions:
+        - group_name: users
+          level: CAN_RUN

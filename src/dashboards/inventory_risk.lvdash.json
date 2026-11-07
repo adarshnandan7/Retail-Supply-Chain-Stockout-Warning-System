@@ -1,0 +1,1448 @@
+{
+  "datasets": [
+    {
+      "name": "ds_risk",
+      "displayName": "Risk queue",
+      "queryLines": [
+        "SELECT risk_rank, risk_tier, risk_score, region, store_name, category, sku_name, supplier_name, on_hand_units,\n",
+        "       inbound_units_in_window, ROUND(forecast_demand_window, 0) AS forecast_demand_window, lead_time_window_days,\n",
+        "       projected_stockout_in_days, stockout_probability, revenue_at_risk, primary_driver, recommended_action, recommended_qty,\n",
+        "       planner_explanation, CASE WHEN projected_stockout_in_days <= 3 THEN 1 ELSE 0 END AS out_within_3d, as_of_date\n",
+        "FROM serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations\n",
+        "WHERE risk_tier IN ('Critical', 'High')\n",
+        "ORDER BY risk_rank\n"
+      ]
+    },
+    {
+      "name": "ds_cover",
+      "displayName": "Inventory cover",
+      "queryLines": [
+        "SELECT region, category,\n",
+        "       CASE WHEN days_of_cover < 3 THEN '1: <3 days' WHEN days_of_cover < 7 THEN '2: 3-7 days' WHEN days_of_cover < 14 THEN '3: 7-14 days'\n",
+        "            WHEN days_of_cover <= 45 THEN '4: 14-45 days' ELSE '5: >45 days (excess)' END AS cover_band,\n",
+        "       COUNT(*) AS store_skus\n",
+        "FROM serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations GROUP BY ALL\n"
+      ]
+    },
+    {
+      "name": "ds_wape_overall",
+      "displayName": "Forecast accuracy",
+      "queryLines": [
+        "SELECT MEASURE(model_wape) AS model_wape, MEASURE(baseline_wape) AS baseline_wape, MEASURE(wape_improvement_pct) / 100 AS wape_improvement,\n",
+        "       MEASURE(model_bias) AS model_bias\n",
+        "FROM serverless_stable_3vku19_catalog.inventory_risk.mv_forecast_accuracy\n"
+      ]
+    },
+    {
+      "name": "ds_wape_category",
+      "displayName": "WAPE by category",
+      "queryLines": [
+        "SELECT category, 'Champion model' AS forecast, MEASURE(model_wape) AS wape FROM serverless_stable_3vku19_catalog.inventory_risk.mv_forecast_accuracy GROUP BY category\n",
+        "UNION ALL\n",
+        "SELECT category, 'Seasonal naive (today)' AS forecast, MEASURE(baseline_wape) AS wape FROM serverless_stable_3vku19_catalog.inventory_risk.mv_forecast_accuracy GROUP BY category\n"
+      ]
+    },
+    {
+      "name": "ds_wape_promo",
+      "displayName": "WAPE promo vs regular",
+      "queryLines": [
+        "SELECT on_promo AS day_type, 'Champion model' AS forecast, MEASURE(model_wape) AS wape FROM serverless_stable_3vku19_catalog.inventory_risk.mv_forecast_accuracy GROUP BY on_promo\n",
+        "UNION ALL\n",
+        "SELECT on_promo AS day_type, 'Seasonal naive (today)' AS forecast, MEASURE(baseline_wape) AS wape FROM serverless_stable_3vku19_catalog.inventory_risk.mv_forecast_accuracy GROUP BY on_promo\n"
+      ]
+    },
+    {
+      "name": "ds_stockout_trend",
+      "displayName": "Stockout rate trend",
+      "queryLines": [
+        "SELECT sale_week, region, MEASURE(stockout_rate) AS stockout_rate\n",
+        "FROM serverless_stable_3vku19_catalog.inventory_risk.mv_stockout_history WHERE sale_week >= '2025-11-01' GROUP BY ALL\n"
+      ]
+    },
+    {
+      "name": "ds_alert_quality",
+      "displayName": "Alert quality backtest",
+      "queryLines": [
+        "SELECT 'Risk radar (Critical+High)' AS method, MEASURE(radar_alerts) AS alerts, MEASURE(radar_alert_precision) AS precision, MEASURE(radar_alert_recall) AS recall\n",
+        "FROM serverless_stable_3vku19_catalog.inventory_risk.mv_alert_backtest\n",
+        "UNION ALL\n",
+        "SELECT 'Rule of thumb (cover < lead time)', MEASURE(rule_alerts), MEASURE(rule_alert_precision), MEASURE(rule_alert_recall)\n",
+        "FROM serverless_stable_3vku19_catalog.inventory_risk.mv_alert_backtest\n"
+      ]
+    },
+    {
+      "name": "ds_supplier",
+      "displayName": "Supplier performance",
+      "queryLines": [
+        "SELECT supplier_name, primary_category, contract_lead_time_days, avg_actual_lead_time_days, on_time_rate_last_30d, open_lines, overdue_open_lines\n",
+        "FROM serverless_stable_3vku19_catalog.inventory_risk.gold_supplier_lead_time_stats ORDER BY on_time_rate_last_30d\n"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "risk_overview",
+      "displayName": "Risk radar",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Harvest Lane Markets - Inventory Risk Radar"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "subtitle",
+            "multilineTextboxSpec": {
+              "lines": [
+                "Store/SKUs likely to stock out before replenishment arrives, ranked by risk and revenue at risk. Planners decide; nothing is ordered automatically."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "f_region",
+            "queries": [
+              {
+                "name": "f_region_ds_risk",
+                "query": {
+                  "datasetName": "ds_risk",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "f_region_ds_cover",
+                "query": {
+                  "datasetName": "ds_cover",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "region",
+                    "displayName": "Region",
+                    "queryName": "f_region_ds_risk"
+                  },
+                  {
+                    "fieldName": "region",
+                    "displayName": "Region",
+                    "queryName": "f_region_ds_cover"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Region"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "f_category",
+            "queries": [
+              {
+                "name": "f_category_ds_risk",
+                "query": {
+                  "datasetName": "ds_risk",
+                  "fields": [
+                    {
+                      "name": "category",
+                      "expression": "`category`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "f_category_ds_cover",
+                "query": {
+                  "datasetName": "ds_cover",
+                  "fields": [
+                    {
+                      "name": "category",
+                      "expression": "`category`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "category",
+                    "displayName": "Category",
+                    "queryName": "f_category_ds_risk"
+                  },
+                  {
+                    "fieldName": "category",
+                    "displayName": "Category",
+                    "queryName": "f_category_ds_cover"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Category"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "f_tier",
+            "queries": [
+              {
+                "name": "f_tier_ds_risk",
+                "query": {
+                  "datasetName": "ds_risk",
+                  "fields": [
+                    {
+                      "name": "risk_tier",
+                      "expression": "`risk_tier`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "risk_tier",
+                    "displayName": "Risk tier",
+                    "queryName": "f_tier_ds_risk"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Risk tier"
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 2,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "k_alerts",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_risk",
+                  "fields": [
+                    {
+                      "name": "count(risk_rank)",
+                      "expression": "COUNT(`risk_rank`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count(risk_rank)",
+                  "displayName": "Critical + High alerts"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Critical + High alerts"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "k_revenue",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_risk",
+                  "fields": [
+                    {
+                      "name": "sum(revenue_at_risk)",
+                      "expression": "SUM(`revenue_at_risk`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(revenue_at_risk)",
+                  "displayName": "Revenue at risk",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Revenue at risk"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 4,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "k_out3",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_risk",
+                  "fields": [
+                    {
+                      "name": "sum(out_within_3d)",
+                      "expression": "SUM(`out_within_3d`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(out_within_3d)",
+                  "displayName": "Projected out within 3 days"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Projected out within 3 days"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 4,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "k_prob",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_risk",
+                  "fields": [
+                    {
+                      "name": "avg(stockout_probability)",
+                      "expression": "AVG(`stockout_probability`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg(stockout_probability)",
+                  "displayName": "Avg stockout probability",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Avg stockout probability"
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 4,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_region_tier",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_risk",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "risk_tier",
+                      "expression": "`risk_tier`"
+                    },
+                    {
+                      "name": "sum(revenue_at_risk)",
+                      "expression": "SUM(`revenue_at_risk`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "region",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Region"
+                },
+                "y": {
+                  "fieldName": "sum(revenue_at_risk)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Revenue at risk",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "risk_tier",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Tier"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Revenue at risk by region and tier"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "c_driver",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_risk",
+                  "fields": [
+                    {
+                      "name": "primary_driver",
+                      "expression": "`primary_driver`"
+                    },
+                    {
+                      "name": "count(risk_rank)",
+                      "expression": "COUNT(`risk_rank`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "count(risk_rank)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Alerts"
+                },
+                "y": {
+                  "fieldName": "primary_driver",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Primary driver"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Why items are at risk (primary driver)"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 7,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "c_action",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_risk",
+                  "fields": [
+                    {
+                      "name": "recommended_action",
+                      "expression": "`recommended_action`"
+                    },
+                    {
+                      "name": "count(risk_rank)",
+                      "expression": "COUNT(`risk_rank`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "recommended_action",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Suggested action"
+                },
+                "y": {
+                  "fieldName": "count(risk_rank)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Alerts"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Suggested planner actions"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 13,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "c_cover",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_cover",
+                  "fields": [
+                    {
+                      "name": "cover_band",
+                      "expression": "`cover_band`"
+                    },
+                    {
+                      "name": "sum(store_skus)",
+                      "expression": "SUM(`store_skus`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "cover_band",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Days of cover"
+                },
+                "y": {
+                  "fieldName": "sum(store_skus)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Store/SKUs"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Inventory cover across all store/SKUs (shortage to excess)"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 13,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "t_queue",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_risk",
+                  "fields": [
+                    {
+                      "name": "risk_rank",
+                      "expression": "`risk_rank`"
+                    },
+                    {
+                      "name": "risk_tier",
+                      "expression": "`risk_tier`"
+                    },
+                    {
+                      "name": "risk_score",
+                      "expression": "`risk_score`"
+                    },
+                    {
+                      "name": "store_name",
+                      "expression": "`store_name`"
+                    },
+                    {
+                      "name": "sku_name",
+                      "expression": "`sku_name`"
+                    },
+                    {
+                      "name": "on_hand_units",
+                      "expression": "`on_hand_units`"
+                    },
+                    {
+                      "name": "forecast_demand_window",
+                      "expression": "`forecast_demand_window`"
+                    },
+                    {
+                      "name": "lead_time_window_days",
+                      "expression": "`lead_time_window_days`"
+                    },
+                    {
+                      "name": "projected_stockout_in_days",
+                      "expression": "`projected_stockout_in_days`"
+                    },
+                    {
+                      "name": "revenue_at_risk",
+                      "expression": "`revenue_at_risk`"
+                    },
+                    {
+                      "name": "primary_driver",
+                      "expression": "`primary_driver`"
+                    },
+                    {
+                      "name": "recommended_action",
+                      "expression": "`recommended_action`"
+                    },
+                    {
+                      "name": "recommended_qty",
+                      "expression": "`recommended_qty`"
+                    },
+                    {
+                      "name": "planner_explanation",
+                      "expression": "`planner_explanation`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "risk_rank",
+                    "displayName": "#"
+                  },
+                  {
+                    "fieldName": "risk_tier",
+                    "displayName": "Tier"
+                  },
+                  {
+                    "fieldName": "risk_score",
+                    "displayName": "Score"
+                  },
+                  {
+                    "fieldName": "store_name",
+                    "displayName": "Store"
+                  },
+                  {
+                    "fieldName": "sku_name",
+                    "displayName": "Item"
+                  },
+                  {
+                    "fieldName": "on_hand_units",
+                    "displayName": "On hand"
+                  },
+                  {
+                    "fieldName": "forecast_demand_window",
+                    "displayName": "Forecast (window)"
+                  },
+                  {
+                    "fieldName": "lead_time_window_days",
+                    "displayName": "Window (d)"
+                  },
+                  {
+                    "fieldName": "projected_stockout_in_days",
+                    "displayName": "Out in (d)"
+                  },
+                  {
+                    "fieldName": "revenue_at_risk",
+                    "displayName": "Revenue at risk"
+                  },
+                  {
+                    "fieldName": "primary_driver",
+                    "displayName": "Driver"
+                  },
+                  {
+                    "fieldName": "recommended_action",
+                    "displayName": "Action"
+                  },
+                  {
+                    "fieldName": "recommended_qty",
+                    "displayName": "Qty"
+                  },
+                  {
+                    "fieldName": "planner_explanation",
+                    "displayName": "Planner note"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ranked exceptions"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 12,
+            "height": 9
+          }
+        }
+      ]
+    },
+    {
+      "name": "accuracy",
+      "displayName": "Forecast & alert quality",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1",
+      "layout": [
+        {
+          "widget": {
+            "name": "title2",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Forecast accuracy, availability and alert quality"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "subtitle2",
+            "multilineTextboxSpec": {
+              "lines": [
+                "Holdout: last 28 days, every store/SKU and horizon. Stockout days excluded (censored demand). Backtest: risk scored 4 weeks ago vs what actually happened."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "k_model_wape",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_wape_overall",
+                  "fields": [
+                    {
+                      "name": "model_wape",
+                      "expression": "`model_wape`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "model_wape",
+                  "displayName": "Model WAPE (lower is better)",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Model WAPE (lower is better)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "k_base_wape",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_wape_overall",
+                  "fields": [
+                    {
+                      "name": "baseline_wape",
+                      "expression": "`baseline_wape`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "baseline_wape",
+                  "displayName": "Baseline WAPE (today's method)",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Baseline WAPE (today's method)"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "k_improve",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_wape_overall",
+                  "fields": [
+                    {
+                      "name": "wape_improvement",
+                      "expression": "`wape_improvement`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "wape_improvement",
+                  "displayName": "Forecast error reduction",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Forecast error reduction"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "k_bias",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_wape_overall",
+                  "fields": [
+                    {
+                      "name": "model_bias",
+                      "expression": "`model_bias`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "model_bias",
+                  "displayName": "Model bias",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Model bias"
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "c_wape_cat",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_wape_category",
+                  "fields": [
+                    {
+                      "name": "category",
+                      "expression": "`category`"
+                    },
+                    {
+                      "name": "forecast",
+                      "expression": "`forecast`"
+                    },
+                    {
+                      "name": "sum(wape)",
+                      "expression": "SUM(`wape`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "category",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Category"
+                },
+                "y": {
+                  "fieldName": "sum(wape)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "WAPE",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "forecast",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Forecast"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Forecast error by category"
+              },
+              "mark": {
+                "layout": "group"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "c_wape_promo",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_wape_promo",
+                  "fields": [
+                    {
+                      "name": "day_type",
+                      "expression": "`day_type`"
+                    },
+                    {
+                      "name": "forecast",
+                      "expression": "`forecast`"
+                    },
+                    {
+                      "name": "sum(wape)",
+                      "expression": "SUM(`wape`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "day_type",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Day type"
+                },
+                "y": {
+                  "fieldName": "sum(wape)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "WAPE",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "forecast",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Forecast"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Forecast error on promotion vs regular days"
+              },
+              "mark": {
+                "layout": "group"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 5,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "c_stockout_trend",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_stockout_trend",
+                  "fields": [
+                    {
+                      "name": "sale_week",
+                      "expression": "`sale_week`"
+                    },
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "avg(stockout_rate)",
+                      "expression": "AVG(`stockout_rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "sale_week",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Week"
+                },
+                "y": {
+                  "fieldName": "avg(stockout_rate)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Stockout rate",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "region",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Region"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Weekly stockout rate (share of store/SKU/days ending at zero on hand)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 11,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "t_alert_quality",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_alert_quality",
+                  "fields": [
+                    {
+                      "name": "method",
+                      "expression": "`method`"
+                    },
+                    {
+                      "name": "alerts",
+                      "expression": "`alerts`"
+                    },
+                    {
+                      "name": "precision",
+                      "expression": "`precision`"
+                    },
+                    {
+                      "name": "recall",
+                      "expression": "`recall`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "method",
+                    "displayName": "Method"
+                  },
+                  {
+                    "fieldName": "alerts",
+                    "displayName": "Alerts"
+                  },
+                  {
+                    "fieldName": "precision",
+                    "displayName": "Precision"
+                  },
+                  {
+                    "fieldName": "recall",
+                    "displayName": "Recall"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Alert quality (4-week backtest, items with stock on hand)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 17,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "t_supplier",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_supplier",
+                  "fields": [
+                    {
+                      "name": "supplier_name",
+                      "expression": "`supplier_name`"
+                    },
+                    {
+                      "name": "primary_category",
+                      "expression": "`primary_category`"
+                    },
+                    {
+                      "name": "contract_lead_time_days",
+                      "expression": "`contract_lead_time_days`"
+                    },
+                    {
+                      "name": "avg_actual_lead_time_days",
+                      "expression": "`avg_actual_lead_time_days`"
+                    },
+                    {
+                      "name": "on_time_rate_last_30d",
+                      "expression": "`on_time_rate_last_30d`"
+                    },
+                    {
+                      "name": "overdue_open_lines",
+                      "expression": "`overdue_open_lines`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "supplier_name",
+                    "displayName": "Supplier"
+                  },
+                  {
+                    "fieldName": "primary_category",
+                    "displayName": "Category"
+                  },
+                  {
+                    "fieldName": "contract_lead_time_days",
+                    "displayName": "Contract LT"
+                  },
+                  {
+                    "fieldName": "avg_actual_lead_time_days",
+                    "displayName": "Actual LT"
+                  },
+                  {
+                    "fieldName": "on_time_rate_last_30d",
+                    "displayName": "On-time 30d"
+                  },
+                  {
+                    "fieldName": "overdue_open_lines",
+                    "displayName": "Overdue lines"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Supplier delivery performance"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 17,
+            "width": 6,
+            "height": 5
+          }
+        }
+      ]
+    }
+  ]
+}

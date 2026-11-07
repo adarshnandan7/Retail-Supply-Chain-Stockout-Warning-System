@@ -107,7 +107,13 @@ GRANT SELECT ON ALL TABLES IN SCHEMA app TO PUBLIC;
 
 
 def init_app_schema() -> None:
-    pg_exec(APP_DDL)
+    """Idempotent: create app-state tables if missing. Each statement runs on its own so that a grant on a table
+    owned by another role (e.g. created by the deployment job) does not block app start-up."""
+    for stmt in [x.strip() for x in APP_DDL.split(";") if x.strip()]:
+        try:
+            pg_exec(stmt)
+        except psycopg.Error as e:  # noqa: PERF203 - start-up only
+            print(f"app schema init: skipped '{stmt[:60]}...': {e.diag.message_primary if e.diag else e}")
 
 
 def risk_queue() -> pd.DataFrame:

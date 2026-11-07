@@ -19,6 +19,8 @@ dbutils.widgets.text("catalog", "serverless_stable_3vku19_catalog")
 dbutils.widgets.text("schema", "inventory_risk")
 dbutils.widgets.text("lakebase_endpoint", "projects/inventory-risk-radar/branches/production/endpoints/primary")
 dbutils.widgets.text("pg_database", "inventory_risk_app")
+dbutils.widgets.text("app_sp_client_id", "")
+APP_SP = dbutils.widgets.get("app_sp_client_id")
 CATALOG, SCHEMA = dbutils.widgets.get("catalog"), dbutils.widgets.get("schema")
 FQ = f"{CATALOG}.{SCHEMA}"
 ENDPOINT = dbutils.widgets.get("lakebase_endpoint")
@@ -58,6 +60,16 @@ def pg(sql):
     with conn.cursor() as cur:
         cur.execute(sql)
         return pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description]) if cur.description else None
+
+# the snapshot refresh can recreate the Postgres table, so (re)grant the app's Postgres role read access every run
+if APP_SP:
+    pg(f'GRANT USAGE ON SCHEMA "{SCHEMA}" TO "{APP_SP}"')
+    pg(f'GRANT SELECT ON ALL TABLES IN SCHEMA "{SCHEMA}" TO "{APP_SP}"')
+    if pg("SELECT count(*) AS n FROM information_schema.schemata WHERE schema_name = 'app'").n.iloc[0] > 0:
+        pg(f'GRANT USAGE, CREATE ON SCHEMA app TO "{APP_SP}"')
+        pg(f'GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA app TO "{APP_SP}"')
+        pg(f'GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO "{APP_SP}"')
+    print("granted Lakebase privileges to app role", APP_SP)
 
 checks = {}
 checks["synced_rows_by_tier"] = pg(f'SELECT risk_tier, count(*) AS rows FROM "{SCHEMA}"."risk_recommendations_online" GROUP BY 1 ORDER BY 2 DESC')

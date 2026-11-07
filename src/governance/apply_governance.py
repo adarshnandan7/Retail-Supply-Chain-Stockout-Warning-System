@@ -12,6 +12,8 @@
 
 dbutils.widgets.text("catalog", "serverless_stable_3vku19_catalog")
 dbutils.widgets.text("schema", "inventory_risk")
+dbutils.widgets.text("app_sp_client_id", "")
+APP_SP = dbutils.widgets.get("app_sp_client_id")
 CATALOG, SCHEMA = dbutils.widgets.get("catalog"), dbutils.widgets.get("schema")
 FQ = f"{CATALOG}.{SCHEMA}"
 EVIDENCE = f"/Volumes/{CATALOG}/{SCHEMA}/evidence"
@@ -84,7 +86,7 @@ for r in tables:
     stage = prefix if prefix in ("bronze", "silver", "gold") else ("ml" if name in ("demand_forecast", "forecast_backtest") else "serving")
     kw = {"MATERIALIZED_VIEW": "MATERIALIZED VIEW", "STREAMING_TABLE": "STREAMING TABLE", "VIEW": "VIEW", "METRIC_VIEW": "VIEW"}.get(r.table_type, "TABLE")
     run(f"ALTER {kw} {FQ}.{name} SET TAGS ('domain' = 'supply_chain', 'layer' = '{layer}', 'sensitivity' = 'internal', 'contains_pii' = 'false', "
-        f"'owning_team' = 'replenishment_planning', 'data_product' = 'inventory_risk_radar', 'product_stage' = '{stage}')")
+        f"'owning_team' = 'replenishment_planning', 'solution' = 'inventory_risk_radar', 'product_stage' = '{stage}')")
 
 # COMMAND ----------
 
@@ -116,7 +118,7 @@ AS SELECT recommendation_id, as_of_date, risk_rank, risk_score, risk_tier, store
 FROM {FQ}.risk_recommendations
 WHERE {FQ}.can_see_region(region)
 """)
-run(f"ALTER VIEW {FQ}.v_planner_risk_queue SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'governance' = 'row_filter_and_mask', 'data_product' = 'inventory_risk_radar')")
+run(f"ALTER VIEW {FQ}.v_planner_risk_queue SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'governance' = 'row_filter_and_mask', 'solution' = 'inventory_risk_radar')")
 
 # COMMAND ----------
 
@@ -128,6 +130,11 @@ run(f"GRANT USE SCHEMA ON SCHEMA {FQ} TO `account users`")
 run(f"GRANT SELECT ON VIEW {FQ}.v_planner_risk_queue TO `account users`")
 run(f"GRANT EXECUTE ON FUNCTION {FQ}.can_see_region TO `account users`")
 run(f"GRANT EXECUTE ON FUNCTION {FQ}.can_see_financials TO `account users`")
+# Planner app service principal: reads published tables for drill-down and runs Genie on the governed schema
+if APP_SP:
+    run(f"GRANT USE CATALOG ON CATALOG {CATALOG} TO `{APP_SP}`")
+    run(f"GRANT USE SCHEMA ON SCHEMA {FQ} TO `{APP_SP}`")
+    run(f"GRANT SELECT ON SCHEMA {FQ} TO `{APP_SP}`")
 
 # COMMAND ----------
 

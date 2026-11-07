@@ -21,6 +21,8 @@ resources:
           default: ${var.as_of_date}
         - name: llm_endpoint
           default: ${var.llm_endpoint}
+        - name: app_sp_client_id
+          default: ${resources.apps.planner_app.service_principal_client_id}
       tasks:
         - task_key: generate_raw_data
           description: "Land synthetic source-system files in the UC Volume (stands in for POS/ERP/WMS exports)"

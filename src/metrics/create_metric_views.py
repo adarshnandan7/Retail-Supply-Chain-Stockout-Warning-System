@@ -127,8 +127,9 @@ measures:
 """,
 "mv_alert_backtest": f"""
 version: 1.1
-comment: "Alert quality on a 4-week-old backtest: did items flagged Critical/High actually stock out within their replenishment window? Compared with today's rule of thumb (days of cover < contract lead time)."
+comment: "Alert quality on a 4-week-old backtest (items that still had stock at the origin; empty shelves are known, not predicted): did items flagged Critical/High actually stock out within their replenishment window? Compared with today's rule of thumb (days of cover < contract lead time)."
 source: {FQ}.risk_backtest
+filter: on_hand_units > 0
 dimensions:
   - name: region
     expr: region
@@ -163,7 +164,7 @@ import json
 results = {}
 for name, yml in VIEWS.items():
     spark.sql(f"CREATE OR REPLACE VIEW {FQ}.{name} WITH METRICS LANGUAGE YAML AS $$\n{yml}\n$$")
-    spark.sql(f"ALTER VIEW {FQ}.{name} SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'product_stage' = 'semantic', 'data_product' = 'inventory_risk_radar')")
+    spark.sql(f"ALTER VIEW {FQ}.{name} SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'product_stage' = 'semantic', 'solution' = 'inventory_risk_radar')")
     print("created", name)
 
 checks = {

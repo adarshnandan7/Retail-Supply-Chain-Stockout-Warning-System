@@ -17,7 +17,7 @@ resources:
         - name: genie-space
           genie_space:
             name: inventory-risk-genie
-            space_id: ${resources.genie_spaces.inventory_risk_genie.space_id}
+            space_id: ${resources.genie_spaces.inventory_risk_genie.id}
             permission: CAN_RUN
         - name: demand-forecast
           uc_securable:

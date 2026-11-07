@@ -1,0 +1,200 @@
+{
+  "title": "Harvest Lane Markets - Inventory Risk Radar readout",
+  "slides": [
+    {
+      "id": "cover", "layout": "title",
+      "title": "Catch stockouts before the shelf goes empty",
+      "subtitle": "Inventory Risk Radar readout for Harvest Lane Markets",
+      "notes": {
+        "purpose": "Frame the meeting: who we are talking to, the problem, and what they will see.",
+        "talk_track": "Thanks for the time. Today is about one question your planners ask every morning: which items will run out before the next delivery arrives, and what should we do about it. I will show you the outcome first, then the working build, then what a pilot on your data would look like.",
+        "evidence": ["Built and run end to end on Databricks; job run 465476598725505 succeeded 9 of 9 tasks"],
+        "transition": "Let me start with the outcome.",
+        "likely_question": "Is this a product or a custom build? A working build on standard Databricks services, deployable with one bundle."
+      }
+    },
+    {
+      "id": "exec-summary", "layout": "content_basic",
+      "title": "54% more stockouts caught for the same planner effort",
+      "body": "62% of radar alerts were real stockouts, vs 20% with today's cover rule\nSame workload: 732 real stockouts caught vs 475 (+54%)\n78% fewer alerts to triage than today's rule (1,172 vs 5,372)\nForecast error down 14%, and 27% on promotion days\nAsk: an 8-week pilot in 2 regions to set targets on your baseline",
+      "bullets": true,
+      "notes": {
+        "purpose": "Lead with the business outcome in the buyer's KPIs before any technology.",
+        "talk_track": "Here is the headline. We replayed the last four weeks: scoring risk with only what was known four weeks ago, then checking what actually happened. Six in ten radar alerts were real stockouts, against two in ten for the days-of-cover rule planners use today. Give a planner the same number of alerts and they catch 54 percent more real stockouts. And the forecast is 27 percent more accurate on promotion days, which is exactly where the shelves go empty.",
+        "evidence": ["evidence/06_backtest_alert_precision.md: radar 62.5% precision, rule 20.4%, equal-volume 732 vs 475", "evidence/04_model_comparison.md: WAPE 0.455 vs 0.529, promo days 0.401 vs 0.549"],
+        "transition": "Why does this matter in dollars? Let me show the size of the problem.",
+        "likely_question": "Is the backtest fair? Yes: it uses only data available at the time and excludes items that were already empty, so it measures early warning, not hindsight."
+      }
+    },
+    {
+      "id": "problem-size", "layout": "content_3col",
+      "title": "Stockouts are costly and concentrated",
+      "columns": ["4.2% of shelves", "Share of store/SKU days that end with zero on hand, last 12 months", "19% on promo days", "Stockouts are 4.6x more likely when you are paying to drive demand", "$10.8M a year", "Estimated lost sales before substitution, on the 400-SKU slice modeled"],
+      "notes": {
+        "purpose": "Quantify the pain in the executive sponsor's language: availability and lost sales.",
+        "talk_track": "Across 50 stores and the 400 SKUs we modeled, about four in every hundred shelf-days end empty. On promotion days it is almost one in five, so the promotions you fund are where you lose the sale. That adds up to roughly 10.8 million dollars a year before substitution. Some shoppers buy another brand, so the real number is lower, and the pilot is where we calibrate it.",
+        "evidence": ["evidence/11_business_baseline.md: stockout rate 0.0417, promo days 0.1923, est. lost sales $10.83M on $226M sales"],
+        "transition": "So why don't planners see it coming today?",
+        "likely_question": "How did you estimate lost sales? Stockout days times the item's average daily sales on in-stock days times price; we will calibrate with your substitution data."
+      }
+    },
+    {
+      "id": "why-today", "layout": "content_2col",
+      "title": "Why planners find out too late",
+      "columns": ["How it works today", "Sales, inventory, POs, promos and lead times sit in separate reports\nDays-of-cover rule ignores promotions and late suppliers\n5,372 alerts a day, 80% of them false", "What planners need", "One ranked list of what will run out before replenishment\nThe reason in units, and a suggested action\nA place to decide and record it"],
+      "notes": {
+        "purpose": "Diagnose the root cause so the solution feels inevitable.",
+        "talk_track": "The data exists. It lives in five places. The rule of thumb, cover below lead time, has two blind spots: it assumes demand next week looks like last week, so promotions and holidays surprise it, and it assumes suppliers deliver on contract, so a late dairy supplier is invisible until the shelf is empty. And because it flags everything that is low, planners get thousands of alerts and learn to ignore them.",
+        "evidence": ["evidence/06_backtest_alert_precision.md: rule of thumb 5,372 alerts, 20.4% precision"],
+        "transition": "Here is what changes for each of the people who own this.",
+        "likely_question": "Couldn't we just tune the rule? Tuning trades one blind spot for another; the radar fixes the inputs: forecast demand and projected arrivals."
+      }
+    },
+    {
+      "id": "value-by-owner", "layout": "content_2col",
+      "title": "Value for the sponsor and the planning team",
+      "columns": ["VP Supply Chain", "Higher on-shelf availability where it matters most: promotions and holidays\nLost sales measured and tracked as one KPI\nSupplier issues visible the day they start", "Replenishment planning lead", "A morning queue ranked by risk and revenue\n78% fewer alerts, 3x more of them real\nExpedite, transfer or reorder suggested; planner decides"],
+      "notes": {
+        "purpose": "Frame value for both the executive sponsor and the domain owner explicitly.",
+        "talk_track": "For you as the sponsor, this is about availability and lost sales, measured the same way every week, and seeing supplier problems the day they start rather than at month end. For your planning lead, it is a shorter, better list: one ranked queue, the reason for each item in units, and a suggested action. The planner stays in charge. Nothing is ordered automatically, and every decision is recorded.",
+        "evidence": ["evidence/05_risk_recommendations.md: 2,338 Critical/High items with drivers and actions", "evidence/08_lakebase_checks.md: planner decisions recorded"],
+        "transition": "Let me show you how it works, end to end.",
+        "likely_question": "Will planners trust it? Every alert shows its drivers in units, and they can override; overrides are tracked so we learn from them."
+      }
+    },
+    {
+      "id": "section-how", "layout": "section_break_1",
+      "title": "How the Risk Radar works",
+      "notes": {
+        "purpose": "Act break into the solution and demo.",
+        "talk_track": "Now the how. I will keep it at the level of what happens every morning, and go deeper on anything you want.",
+        "evidence": ["docs/architecture.md"],
+        "transition": "Four steps, every morning.",
+        "likely_question": "How long does the morning run take? About 19 minutes end to end on serverless compute in the build."
+      }
+    },
+    {
+      "id": "four-steps", "layout": "card_quad",
+      "title": "Every morning, raw feeds become a ranked decision",
+      "columns": ["1. Ingest: Lakeflow pipelines land POS, inventory, PO, promo and supplier feeds and drop bad records", "2. Govern: Unity Catalog holds every table, model and KPI with access rules and lineage", "3. Predict: a 28-day forecast per store/SKU, then a transparent stockout-risk score", "4. Act: planners work the queue in an app on Lakebase; Genie and a dashboard answer the rest"],
+      "notes": {
+        "purpose": "Tell: explain the end-to-end journey before showing it.",
+        "talk_track": "Step one, Lakeflow pipelines ingest the five feeds incrementally and enforce data quality; in this run they dropped over 20,000 bad sales and inventory records. Step two, Unity Catalog governs everything: tables, the model, the KPI definitions, who can see which region. Step three, a forecast for every store and SKU for the next 28 days, compared with on hand plus inbound over the supplier's real lead time. Step four, planners act in an app backed by Lakebase, and anyone can ask Genie a question in plain English.",
+        "evidence": ["evidence/02_pipeline_data_quality.md", "evidence/09_bundle_resources.md: all resources deployed by one bundle"],
+        "transition": "Here is what a planner sees this morning.",
+        "likely_question": "Which systems do you connect to? Any POS, ERP and WMS; Lakeflow Connect and file or API ingestion cover the common ones."
+      }
+    },
+    {
+      "id": "this-morning", "layout": "title_only",
+      "title": "This morning's queue: top risks with the reason and action",
+      "table": {"data": [
+        ["Item / store", "Out in", "Why", "Suggested action"],
+        ["Green Beans 2ct / Stonebrook", "1 day", "Supplier 348 units late", "Expedite 348 from Riverbend Fresh"],
+        ["Heavy Cream / Oakhurst", "1 day", "Supplier late + promo", "Expedite 138 from Summit Dairy"],
+        ["Sweet Potatoes / Yarrow", "1 day", "Promo +246 units vs usual", "Expedite 192 from Pacific Fresh"],
+        ["2% Milk Organic / Juniper Bay", "2 days", "Dairy supplier 58% on time", "Expedite 84 from Summit Dairy"],
+        ["Peanut Butter / Stonebrook", "12 days", "Promo demand 2x usual", "Reorder 96 from Summit Pantry"]
+      ], "x": 0.5, "y": 1.6, "width": 9.0, "height": 2.8},
+      "notes": {
+        "purpose": "Show: make the output concrete with real rows from the build.",
+        "talk_track": "This is the top of the queue. Green beans at Stonebrook will run out tomorrow: 46 on hand, about 255 forecast over the next three days, and the 348 units on order are late. The suggestion is to expedite that PO. The heavy cream line is a promotion colliding with a late dairy supplier. In the app the planner clicks the row, sees the projected stock path and the open POs, and records a decision in two clicks.",
+        "evidence": ["evidence/05_risk_recommendations.md: top 20 ranked risks and LLM planner notes"],
+        "transition": "Step back from single items and a pattern appears.",
+        "likely_question": "Where does the plain-English note come from? An LLM rephrases the computed facts; it cannot change the numbers or the action."
+      }
+    },
+    {
+      "id": "drivers", "layout": "content_3col",
+      "title": "Two late suppliers explain most of today's risk",
+      "columns": ["Late supplier delivery", "2,094 of 2,338 alerts\nOne call to Summit Dairy covers 516 store/SKUs", "Upcoming promotion", "184 alerts\nForecast 27% more accurate on promo days", "Stock cover gaps", "60 alerts\nNo open PO or a demand surge"],
+      "notes": {
+        "purpose": "Land what it means: the radar turns thousands of item alerts into a few supplier conversations.",
+        "talk_track": "Ninety percent of today's critical and high alerts trace back to suppliers running late, mainly Summit Dairy at 58 percent on time over the last 30 days, versus a 2-day contract. That changes the planner's day: instead of 500 line-by-line reorders, one expedite conversation with one supplier. The second driver is promotions, where the forecast now sees the uplift coming.",
+        "evidence": ["evidence/05_risk_recommendations.md: primary drivers, expedite by supplier", "evidence/03_table_profiles.md: supplier on-time rates"],
+        "transition": "How do we know this is better than what you do today?",
+        "likely_question": "Is the supplier disruption real or staged? In this synthetic data two suppliers were set to run late in the last three weeks; the radar found it without being told."
+      }
+    },
+    {
+      "id": "proof", "layout": "title_only",
+      "title": "Measured against today's method",
+      "table": {"data": [
+        ["KPI", "Today's method", "Risk Radar"],
+        ["Alert precision (4-week backtest)", "20%", "62%"],
+        ["Real stockouts caught, same workload", "475", "732 (+54%)"],
+        ["Alerts to triage", "5,372", "1,172 (-78%)"],
+        ["Forecast error (WAPE), all days", "0.53", "0.45 (-14%)"],
+        ["Forecast error (WAPE), promo days", "0.55", "0.40 (-27%)"]
+      ], "x": 0.8, "y": 1.6, "width": 8.4, "height": 2.8},
+      "notes": {
+        "purpose": "Tell: summarize the evidence in the buyer's KPIs.",
+        "talk_track": "This is the scorecard. Precision triples, alert volume drops by almost four fifths, and at an equal workload planners catch about half as many again of the real stockouts. Recall is the honest trade-off: the old rule flags more items, so it catches more in total, but it buries planners in false alarms. The tiers are adjustable, so you choose the workload.",
+        "evidence": ["evidence/06_backtest_alert_precision.md", "evidence/04_model_comparison.md"],
+        "transition": "What is that worth? Here is how we would size it on your numbers.",
+        "likely_question": "What about the stockouts the radar misses? Lowering the High threshold raises recall; we would set the cut-off with your planners in the pilot."
+      }
+    },
+    {
+      "id": "value-model", "layout": "content_basic",
+      "title": "Sizing the value on your baseline",
+      "body": "Lost sales today: about $10.8M a year on the 400 SKUs modeled, before substitution\nAssume half is recovered by substitution: $5.4M at stake\nRadar catches 38% of stockouts; if planners prevent half of those, about $1.0M a year in sales is recovered\nPlanner time: 78% fewer alerts to review every morning\nPilot sets the real targets: precision, stockout rate, time to action",
+      "bullets": true,
+      "notes": {
+        "purpose": "Quantify impact in the buyer's KPIs with transparent, adjustable assumptions.",
+        "talk_track": "Here is a simple, conservative model. Of the roughly 10.8 million in lost sales, assume half comes back through substitution. The radar catches 38 percent of stockouts at its default threshold; if planners prevent half of those, that is about a million dollars a year in recovered sales on 400 SKUs, and it scales with the assortment you include. The other value is time: planners review a fifth as many alerts. We do not ask you to trust these assumptions; the pilot measures each one.",
+        "evidence": ["evidence/11_business_baseline.md", "evidence/06_backtest_alert_precision.md: recall 38.3%"],
+        "transition": "For your technical team, here is what it takes to run it.",
+        "likely_question": "What does it cost to run? Serverless and pay per use; this daily run is about 19 minutes of compute plus a small Lakebase instance that scales to zero."
+      }
+    },
+    {
+      "id": "production", "layout": "content_2col",
+      "title": "Built to run in production",
+      "columns": ["Governed and secure", "Unity Catalog: lineage, tags, region row filters, masked financials\nApp runs as its own service principal; short-lived tokens, no passwords\nSynthetic data only; nothing leaves your account", "Reliable and portable", "Data-quality rules drop bad records before they reach a forecast\nModel versioned in MLflow; @champion alias, easy rollback\nOne bundle deploys pipeline, job, model, Lakebase, Genie, app"],
+      "notes": {
+        "purpose": "Address the technical stakeholder: architecture, data quality, security, integration.",
+        "talk_track": "For your architect: everything is governed in Unity Catalog, including the KPI definitions, so the dashboard, Genie and this deck read the same numbers. Regional planners only see their region, and revenue exposure is masked unless you are in finance. The app has its own identity with least privilege. Bad records are dropped by declared rules, and the model is versioned with a champion alias so rollback is one step. The whole thing deploys from one bundle in source control, so dev, test and prod are the same code.",
+        "evidence": ["evidence/notebook_runs/apply_governance.md: tags, row filter + mask view, grants", "evidence/02_pipeline_data_quality.md", "evidence/09_bundle_resources.md"],
+        "transition": "Here is how we would prove it on your data.",
+        "likely_question": "How does it integrate with our ERP? It reads PO and receipt events from the ERP and writes nothing back; planners still place orders in the ERP. A write-back is a later option."
+      }
+    },
+    {
+      "id": "pilot", "layout": "content_basic",
+      "title": "An 8-week pilot sets targets on your data",
+      "body": "Weeks 1-2: connect POS, inventory, PO, promo and lead-time feeds for 2 regions; measure the baseline\nWeeks 3-4: run the radar in shadow mode and compare alerts with real stockouts\nWeeks 5-8: planners work the queue in the app; track precision, stockout rate, time to action\nWeek 8: decision gate on targets and roll-out to all regions",
+      "bullets": true,
+      "notes": {
+        "purpose": "Show time to value and lower the risk of the decision.",
+        "talk_track": "We would start small: two regions, eight weeks. The first two weeks connect your feeds and measure today's baseline, so targets are set on your numbers, not ours. Two weeks in shadow mode prove the alerts before anyone changes how they work. Then four weeks live with your planners, measuring precision, stockout rate and time to action. At week eight you decide on targets and roll-out with evidence in hand.",
+        "evidence": ["docs/metric_definitions.md: KPI definitions and measurement method"],
+        "transition": "To get started, here is what we need from you.",
+        "likely_question": "What do you need from our team? A data owner for the feeds, two planners for the pilot, and an hour a week from the planning lead."
+      }
+    },
+    {
+      "id": "next-steps", "layout": "content_basic",
+      "title": "Decisions we need to start",
+      "body": "Sponsor: approve the 8-week, 2-region pilot\nPlanning lead: nominate 2 pilot planners and agree on the alert tiers\nIT / data: grant read access to the 5 source feeds\nTogether: agree on success metrics and the week-8 decision gate",
+      "bullets": true,
+      "notes": {
+        "purpose": "Close with clear, owned next steps.",
+        "talk_track": "Three decisions get us started: your approval of the pilot, two planners from your team, and read access to the feeds. We will bring the build, already deployed and tested, and we will agree the success metrics together before week one.",
+        "evidence": ["README.md: deploy and run instructions"],
+        "transition": "Thank you. Happy to take questions or go deeper into any part.",
+        "likely_question": "When could we start? Once feed access is granted; the build is ready to deploy in your workspace."
+      }
+    },
+    {
+      "id": "closing", "layout": "closing",
+      "notes": {
+        "purpose": "Branded close.",
+        "talk_track": "Thank you.",
+        "evidence": ["github.com/adarshnandan7/Retail-Supply-Chain-Stockout-Warning-System"],
+        "transition": "Questions.",
+        "likely_question": "Can we see it live? Yes, the app and Genie space are deployed and can be demoed now."
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+resources:
+  pipelines:
+    inventory_risk_pipeline:
+      name: inventory-risk-radar-pipeline
+      catalog: ${var.catalog}
+      schema: ${resources.schemas.inventory_risk.name}
+      serverless: true
+      channel: CURRENT
+      photon: true
+      continuous: false
+      root_path: ../src/pipeline
+      libraries:
+        - file:
+            path: ../src/pipeline/bronze.py
+        - file:
+            path: ../src/pipeline/silver.py
+        - file:
+            path: ../src/pipeline/gold.py
+      configuration:
+        landing_path: /Volumes/${var.catalog}/${var.schema}/landing
+        as_of_date: ${var.as_of_date}
+      tags:
+        project: inventory_risk_radar

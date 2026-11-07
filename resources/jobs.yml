@@ -1,0 +1,19 @@
+resources:
+  jobs:
+    inventory_risk_radar_e2e:
+      name: inventory-risk-radar-e2e
+      description: "End-to-end Retail Inventory Risk Radar: raw data -> Lakeflow pipeline -> governance -> forecast -> risk scoring -> serving refresh"
+      max_concurrent_runs: 1
+      tags:
+        project: inventory_risk_radar
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: as_of_date
+          default: ${var.as_of_date}
+      tasks:
+        - task_key: generate_raw_data
+          notebook_task:
+            notebook_path: ../src/datagen/generate_raw_data.py

@@ -27,11 +27,14 @@ variables:
 
 targets:
   dev:
-    mode: development
     default: true
     workspace:
       host: https://fevm-serverless-stable-3vku19.cloud.databricks.com
       profile: serverless-stable-3vku19
     presets:
-      name_prefix: ""
       trigger_pause_status: PAUSED
+      tags:
+        project: inventory_risk_radar
+    permissions:
+      - user_name: adarsh.nandan@databricks.com
+        level: CAN_MANAGE

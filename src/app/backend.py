@@ -174,8 +174,11 @@ def action_log(limit: int = 200) -> pd.DataFrame:
 
 def action_kpis() -> pd.DataFrame:
     return pg_df(f"""
-      WITH first_action AS (
-        SELECT recommendation_id, min(created_at) AS first_at FROM app.planner_actions GROUP BY recommendation_id)
+      WITH first_action AS (  -- first decision on the current publication (same business date, made after it was published)
+        SELECT p.recommendation_id, min(p.created_at) AS first_at
+        FROM app.planner_actions p JOIN {SYNCED_TABLE} r2
+          ON r2.recommendation_id = p.recommendation_id AND p.as_of_date = r2.as_of_date AND p.created_at >= r2.scored_at
+        GROUP BY p.recommendation_id)
       SELECT count(*) FILTER (WHERE r.risk_tier IN ('Critical','High')) AS critical_high_alerts,
              count(f.first_at) FILTER (WHERE r.risk_tier IN ('Critical','High')) AS actioned,
              round(100.0 * count(f.first_at) FILTER (WHERE r.risk_tier IN ('Critical','High'))

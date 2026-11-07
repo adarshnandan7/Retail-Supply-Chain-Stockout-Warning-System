@@ -102,7 +102,8 @@ if has_app:
           SELECT count(*) AS decisions, count_if(is_override) AS overrides, round(avg(CASE WHEN is_override THEN 1 ELSE 0 END), 3) AS override_rate,
                  count(DISTINCT planner) AS planners,
                  round(percentile_approx((unix_timestamp(a.created_at) - unix_timestamp(r.scored_at)) / 3600.0, 0.5), 2) AS median_hours_to_action
-          FROM {FQ}.planner_action_history a JOIN {FQ}.risk_recommendations r USING (recommendation_id)""").toPandas()
+          FROM {FQ}.planner_action_history a JOIN {FQ}.risk_recommendations r
+            ON a.recommendation_id = r.recommendation_id AND a.as_of_date = r.as_of_date AND a.created_at >= r.scored_at""").toPandas()
         checks["planner_kpis_from_delta"] = kpi
         print(kpi.to_string(index=False))
 print("exported:", exported)

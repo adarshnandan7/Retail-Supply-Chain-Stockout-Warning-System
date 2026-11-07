@@ -18,6 +18,9 @@ variables:
   lakebase_project:
     description: Lakebase Autoscaling project id for operational serving
     default: inventory-risk-radar
+  lakebase_owner_role:
+    description: Postgres role id (on the production branch) of the deploying user; owns the app database
+    default: adarsh-nandan
   llm_endpoint:
     description: Foundation model endpoint used for planner explanations
     default: databricks-claude-haiku-5-5

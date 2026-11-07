@@ -1,0 +1,25 @@
+# Lakebase Autoscaling: low-latency Postgres for the planner app.
+#  * serving.risk_recommendations  <- synced (snapshot) from the Delta table of the same name (read path)
+#  * app.watchlists / app.acknowledgements / app.planner_notes / app.overrides / app.action_log  <- written by the app
+#  * Planner actions are exported back to Delta (planner_action_history) by the job for KPI tracking.
+resources:
+  postgres_projects:
+    inventory_risk_lakebase:
+      project_id: ${var.lakebase_project}
+      display_name: "Inventory Risk Radar - planner app state"
+      pg_version: 17
+      history_retention_duration: 604800s
+      default_endpoint_settings:
+        autoscaling_limit_min_cu: 0.5
+        autoscaling_limit_max_cu: 2
+        suspend_timeout_duration: 600s
+      custom_tags:
+        - key: project
+          value: inventory_risk_radar
+
+  postgres_databases:
+    app_db:
+      parent: ${resources.postgres_projects.inventory_risk_lakebase.name}/branches/production
+      database_id: inventory-risk-app
+      postgres_database: inventory_risk_app
+      role: ${resources.postgres_projects.inventory_risk_lakebase.name}/branches/production/roles/${var.lakebase_owner_role}

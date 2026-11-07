@@ -1,0 +1,10 @@
+resources:
+  experiments:
+    demand_forecast_experiment:
+      name: /Users/adarsh.nandan@databricks.com/inventory-risk-radar-demand-forecast
+  registered_models:
+    demand_forecast:
+      catalog_name: ${var.catalog}
+      schema_name: ${resources.schemas.inventory_risk.name}
+      name: demand_forecast
+      comment: "Store/SKU daily demand forecast (global LightGBM, direct multi-horizon 1-28 days). @champion alias is used by batch scoring."

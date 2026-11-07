@@ -2,10 +2,16 @@ resources:
   jobs:
     inventory_risk_radar_e2e:
       name: inventory-risk-radar-e2e
-      description: "End-to-end Retail Inventory Risk Radar: raw data -> Lakeflow pipeline -> governance -> forecast -> risk scoring -> serving refresh"
+      description: "End-to-end Retail Inventory Risk Radar: raw data -> Lakeflow pipeline -> forecast -> risk scoring -> Gen AI notes -> governance -> Lakebase serving"
       max_concurrent_runs: 1
       tags:
         project: inventory_risk_radar
+      schedule:
+        quartz_cron_expression: "0 0 5 * * ?"   # daily 05:00 after POS close; paused in dev via presets
+        timezone_id: America/Chicago
+      email_notifications:
+        on_failure:
+          - adarsh.nandan@databricks.com
       parameters:
         - name: catalog
           default: ${var.catalog}
@@ -13,7 +19,46 @@ resources:
           default: ${var.schema}
         - name: as_of_date
           default: ${var.as_of_date}
+        - name: llm_endpoint
+          default: ${var.llm_endpoint}
       tasks:
         - task_key: generate_raw_data
+          description: "Land synthetic source-system files in the UC Volume (stands in for POS/ERP/WMS exports)"
           notebook_task:
             notebook_path: ../src/datagen/generate_raw_data.py
+
+        - task_key: lakeflow_pipeline
+          description: "Lakeflow Declarative Pipeline: bronze -> silver -> gold"
+          depends_on: [{task_key: generate_raw_data}]
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.inventory_risk_pipeline.id}
+            full_refresh: true
+
+        - task_key: train_forecast
+          description: "Baseline vs LightGBM, MLflow tracking, UC registration with @champion"
+          depends_on: [{task_key: lakeflow_pipeline}]
+          max_retries: 1
+          notebook_task:
+            notebook_path: ../src/ml/train_forecast.py
+            base_parameters:
+              experiment_name: ${resources.experiments.demand_forecast_experiment.name}
+
+        - task_key: batch_forecast
+          depends_on: [{task_key: train_forecast}]
+          notebook_task:
+            notebook_path: ../src/ml/batch_forecast.py
+
+        - task_key: score_risk
+          depends_on: [{task_key: batch_forecast}]
+          notebook_task:
+            notebook_path: ../src/risk/score_risk.py
+
+        - task_key: genai_explanations
+          depends_on: [{task_key: score_risk}]
+          notebook_task:
+            notebook_path: ../src/risk/genai_explanations.py
+
+        - task_key: apply_governance
+          depends_on: [{task_key: genai_explanations}]
+          notebook_task:
+            notebook_path: ../src/governance/apply_governance.py

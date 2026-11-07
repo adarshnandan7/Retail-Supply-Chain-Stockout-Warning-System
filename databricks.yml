@@ -38,6 +38,3 @@ targets:
       trigger_pause_status: PAUSED
       tags:
         project: inventory_risk_radar
-    permissions:
-      - user_name: adarsh.nandan@databricks.com
-        level: CAN_MANAGE

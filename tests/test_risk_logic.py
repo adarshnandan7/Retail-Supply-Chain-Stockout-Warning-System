@@ -12,7 +12,7 @@ from risk_logic import score  # noqa: E402
 def _position(**over):
     base = dict(store_id="S001", sku_id="P1", store_name="Store 1", region="Coastal", sku_name="Milk", category="Dairy & Eggs",
                 supplier_id="V1", supplier_name="Dairy Co", is_perishable=True, on_hand_units=10, r7=5.0, r28=5.0, r28_std=1.5,
-                unit_price=3.0, case_pack=6, contract_lead_time_days=3, p90_lead_time_days=3, on_time_rate_last_30d=0.95)
+                unit_price=3.0, case_pack=6, contract_lead_time_days=3, avg_lead_time_30d=3, on_time_rate_last_30d=0.95)
     base.update(over)
     return base
 
@@ -39,7 +39,7 @@ def test_promo_uplift_drives_high_risk_and_reorder():
 def test_late_supplier_triggers_expedite():
     pos = pd.DataFrame([_position(on_hand_units=8, on_time_rate_last_30d=0.4)])
     fc = _forecast("S001", "P1", 5.0)
-    # 30 units expected on day 2 but supplier running ~5 days late -> projected day 7 (outside the 4-day window)
+    # 30 units expected on day 2 but supplier running ~5 days late -> projected day 7, after the item runs out
     inb = pd.DataFrame([{"store_id": "S001", "sku_id": "P1", "qty": 30, "expected_day": 2, "projected_day": 7}])
     out = score(pos, fc, inb).iloc[0]
     assert out.delayed_inbound_units == 30
@@ -52,3 +52,11 @@ def test_well_stocked_item_is_low_risk():
     out = score(pos, _forecast("S001", "P1", 5.0), pd.DataFrame(columns=["store_id", "sku_id", "qty", "expected_day", "projected_day"])).iloc[0]
     assert out.stockout_probability < 0.01 and out.risk_score < 5 and out.recommended_action == "MONITOR"
     assert np.isnan(out.projected_stockout_in_days) or out.projected_stockout_in_days > 28
+
+
+def test_overdue_line_counts_as_late():
+    pos = pd.DataFrame([_position(on_hand_units=6, on_time_rate_last_30d=0.5)])
+    inb = pd.DataFrame([{"store_id": "S001", "sku_id": "P1", "qty": 24, "expected_day": -1, "projected_day": 4}])
+    out = score(pos, _forecast("S001", "P1", 5.0), inb).iloc[0]
+    assert out.open_po_overdue_lines == 1 and out.delayed_inbound_units == 24
+    assert out.recommended_action == "EXPEDITE"

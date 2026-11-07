@@ -1,0 +1,14 @@
+[
+  {"question": "Top 10 store-SKUs by revenue at risk",
+   "sql": "SELECT risk_rank, store_name, sku_name, risk_tier, risk_score, ROUND(revenue_at_risk, 0) AS revenue_at_risk_usd, primary_driver, recommended_action, recommended_qty\nFROM {FQ}.risk_recommendations\nWHERE risk_tier IN ('Critical', 'High')\nORDER BY revenue_at_risk DESC\nLIMIT 10"},
+  {"question": "Alerts and revenue at risk by region",
+   "sql": "SELECT region, MEASURE(critical_alerts) AS critical_alerts, MEASURE(critical_high_alerts) AS critical_high_alerts, ROUND(MEASURE(revenue_at_risk_critical_high), 0) AS revenue_at_risk_usd\nFROM {FQ}.mv_inventory_risk\nGROUP BY region\nORDER BY critical_high_alerts DESC"},
+  {"question": "Which suppliers drive the most late-delivery risks?",
+   "sql": "SELECT r.supplier_name, COUNT(*) AS critical_high_alerts, ROUND(SUM(r.revenue_at_risk), 0) AS revenue_at_risk_usd, ROUND(MAX(s.on_time_rate_last_30d) * 100, 1) AS on_time_pct_last_30d, MAX(s.overdue_open_lines) AS overdue_open_po_lines\nFROM {FQ}.risk_recommendations r\nJOIN {FQ}.gold_supplier_lead_time_stats s ON r.supplier_id = s.supplier_id\nWHERE r.risk_tier IN ('Critical', 'High') AND r.primary_driver = 'Late supplier delivery'\nGROUP BY r.supplier_name\nORDER BY critical_high_alerts DESC"},
+  {"question": "Forecast WAPE model vs baseline by category",
+   "sql": "SELECT category, ROUND(MEASURE(model_wape), 3) AS model_wape, ROUND(MEASURE(baseline_wape), 3) AS baseline_wape, ROUND(MEASURE(wape_improvement_pct), 1) AS improvement_pct\nFROM {FQ}.mv_forecast_accuracy\nGROUP BY category\nORDER BY improvement_pct DESC"},
+  {"question": "Alert precision of the radar vs the rule of thumb",
+   "sql": "SELECT MEASURE(radar_alerts) AS radar_alerts, ROUND(MEASURE(radar_alert_precision) * 100, 1) AS radar_precision_pct, ROUND(MEASURE(radar_alert_recall) * 100, 1) AS radar_recall_pct, MEASURE(rule_alerts) AS rule_alerts, ROUND(MEASURE(rule_alert_precision) * 100, 1) AS rule_precision_pct, ROUND(MEASURE(rule_alert_recall) * 100, 1) AS rule_recall_pct\nFROM {FQ}.mv_alert_backtest"},
+  {"question": "Monthly stockout rate trend",
+   "sql": "SELECT sale_month, ROUND(MEASURE(stockout_rate) * 100, 2) AS stockout_rate_pct\nFROM {FQ}.mv_stockout_history\nGROUP BY sale_month\nORDER BY sale_month"}
+]

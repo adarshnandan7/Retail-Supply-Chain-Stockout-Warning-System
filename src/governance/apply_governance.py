@@ -63,6 +63,7 @@ col_comments = {
 }
 for t, cols in col_comments.items():
     for c, txt in cols.items():
+        txt = txt.replace("'", "\\'")
         kind = "TABLE" if t.startswith("risk") else "MATERIALIZED VIEW"
         run(f"COMMENT ON COLUMN {FQ}.{t}.{c} IS '{txt}'") if kind == "TABLE" else run(f"ALTER MATERIALIZED VIEW {FQ}.{t} ALTER COLUMN {c} COMMENT '{txt}'")
 
@@ -72,13 +73,18 @@ for t, cols in col_comments.items():
 
 # COMMAND ----------
 
-tables = spark.sql(f"SELECT table_name, table_type FROM {CATALOG}.information_schema.tables WHERE table_schema = '{SCHEMA}'").collect()
+# Tag keys/values respect the metastore's governed tag policies (domain, layer, sensitivity, contains_pii);
+# owning_team / data_product / product_stage are free-form keys.
+tables = spark.sql(f"""SELECT table_name, table_type FROM {CATALOG}.information_schema.tables
+                       WHERE table_schema = '{SCHEMA}' AND table_name NOT LIKE '\\_\\_%' AND table_name NOT LIKE 'event_log%'""").collect()
 for r in tables:
     name = r.table_name
-    layer = name.split("_")[0] if name.split("_")[0] in ("bronze", "silver", "gold") else ("ml" if name in ("demand_forecast", "forecast_backtest") else "serving")
-    sens = "commercial_confidential" if name.startswith(("risk", "gold_supplier", "silver_suppliers", "silver_products")) else "internal"
-    kw = {"MATERIALIZED_VIEW": "MATERIALIZED VIEW", "STREAMING_TABLE": "STREAMING TABLE", "VIEW": "VIEW"}.get(r.table_type, "TABLE")
-    run(f"ALTER {kw} {FQ}.{name} SET TAGS ('domain' = 'supply_chain', 'layer' = '{layer}', 'data_owner' = 'replenishment_planning', 'sensitivity' = '{sens}', 'contains_pii' = 'false')")
+    prefix = name.split("_")[0]
+    layer = prefix if prefix in ("bronze", "silver", "gold") else "gold"
+    stage = prefix if prefix in ("bronze", "silver", "gold") else ("ml" if name in ("demand_forecast", "forecast_backtest") else "serving")
+    kw = {"MATERIALIZED_VIEW": "MATERIALIZED VIEW", "STREAMING_TABLE": "STREAMING TABLE", "VIEW": "VIEW", "METRIC_VIEW": "VIEW"}.get(r.table_type, "TABLE")
+    run(f"ALTER {kw} {FQ}.{name} SET TAGS ('domain' = 'supply_chain', 'layer' = '{layer}', 'sensitivity' = 'internal', 'contains_pii' = 'false', "
+        f"'owning_team' = 'replenishment_planning', 'data_product' = 'inventory_risk_radar', 'product_stage' = '{stage}')")
 
 # COMMAND ----------
 
@@ -110,7 +116,7 @@ AS SELECT recommendation_id, as_of_date, risk_rank, risk_score, risk_tier, store
 FROM {FQ}.risk_recommendations
 WHERE {FQ}.can_see_region(region)
 """)
-run(f"ALTER VIEW {FQ}.v_planner_risk_queue SET TAGS ('domain' = 'supply_chain', 'layer' = 'serving', 'governance' = 'row_filter_and_mask')")
+run(f"ALTER VIEW {FQ}.v_planner_risk_queue SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'governance' = 'row_filter_and_mask', 'data_product' = 'inventory_risk_radar')")
 
 # COMMAND ----------
 
@@ -129,7 +135,7 @@ import json, pandas as pd
 df = pd.DataFrame(log)
 print(df.ok.value_counts().to_dict())
 print(df[~df.ok].to_string() if (~df.ok).any() else "all governance statements succeeded")
-tags = spark.sql(f"SELECT table_name, tag_name, tag_value FROM {CATALOG}.information_schema.table_tags WHERE schema_name = '{SCHEMA}' AND tag_name IN ('layer','sensitivity') ORDER BY 1,2").toPandas()
+tags = spark.sql(f"SELECT table_name, tag_name, tag_value FROM {CATALOG}.information_schema.table_tags WHERE schema_name = '{SCHEMA}' AND tag_name IN ('layer','product_stage') ORDER BY 1,2").toPandas()
 print(tags.pivot(index="table_name", columns="tag_name", values="tag_value").to_string())
 masked = spark.sql(f"SELECT count(*) AS visible_rows, count(revenue_at_risk) AS rows_with_revenue_visible FROM {FQ}.v_planner_risk_queue").toPandas()
 print(masked.to_string(index=False))

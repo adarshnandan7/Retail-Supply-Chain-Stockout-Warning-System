@@ -62,3 +62,18 @@ resources:
           depends_on: [{task_key: genai_explanations}]
           notebook_task:
             notebook_path: ../src/governance/apply_governance.py
+
+        - task_key: metric_views
+          description: "UC metric views with the retailer's KPI definitions"
+          depends_on: [{task_key: apply_governance}]
+          notebook_task:
+            notebook_path: ../src/metrics/create_metric_views.py
+
+        - task_key: lakebase_sync_and_export
+          description: "Refresh Lakebase synced table for the app; land planner actions back in Delta"
+          depends_on: [{task_key: metric_views}]
+          notebook_task:
+            notebook_path: ../src/lakebase/refresh_and_export.py
+            base_parameters:
+              lakebase_endpoint: projects/${var.lakebase_project}/branches/production/endpoints/primary
+              pg_database: ${resources.postgres_databases.app_db.postgres_database}

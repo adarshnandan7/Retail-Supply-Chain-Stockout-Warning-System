@@ -48,11 +48,14 @@ spark.sql(f"""
 CREATE OR REPLACE TABLE {FQ}.risk_explanations
 COMMENT 'LLM-written planner notes for the highest-ranked stockout risks (ai_query over governed facts).'
 AS SELECT recommendation_id,
-  ai_query('{LLM}', prompt, modelParameters => named_struct('max_tokens', 160, 'temperature', 0.1)) AS llm_explanation,
+  nullif(trim(r.result), '') AS llm_explanation, r.errorMessage AS llm_error,
   '{LLM}' AS llm_endpoint, current_timestamp() AS generated_at
-FROM llm_input
+FROM (SELECT recommendation_id,
+        -- generous token budget: the endpoint may spend tokens on internal reasoning before the 2 visible sentences
+        ai_query('{LLM}', prompt, modelParameters => named_struct('max_tokens', 2000), failOnError => false) AS r
+      FROM llm_input)
 """)
-print(spark.table(f"{FQ}.risk_explanations").count(), "explanations generated")
+print(spark.sql(f"SELECT count(*) AS rows, count(llm_explanation) AS ok, count(llm_error) AS errors, percentile(length(llm_explanation), 0.5) AS median_chars FROM {FQ}.risk_explanations").toPandas().to_string(index=False))
 
 # COMMAND ----------
 
@@ -82,4 +85,5 @@ for r in sample.itertuples():
     print(f"#{r.risk_rank} [{r.risk_tier} {r.risk_score}] {r.sku_name} @ {r.store_name} -> {r.recommended_action} {r.recommended_qty}\n   {r.planner_explanation}\n")
 with open(f"{EVIDENCE}/05c_genai_explanations.json", "w") as fh:
     json.dump({"llm_endpoint": LLM, "explanations": int(spark.table(f'{FQ}.risk_explanations').count()),
+               "non_empty": int(spark.sql(f"SELECT count(llm_explanation) FROM {FQ}.risk_explanations").first()[0]),
                "samples": sample.to_dict(orient="records")}, fh, indent=2, default=str)

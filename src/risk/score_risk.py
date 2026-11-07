@@ -49,19 +49,23 @@ def inputs(origin: date):
     rec = lines.where((F.col("received_date") <= o) & (F.col("received_date") > F.date_sub(o, 90)))
     recent = F.col("received_date") > F.date_sub(o, 30)
     sup = rec.groupBy("supplier_id").agg(
-        F.percentile_approx("actual_lead_time_days", 0.9).alias("p90_lead_time_days"),
+        F.avg(F.when(recent, F.col("actual_lead_time_days"))).alias("avg_lead_time_30d"),
         (1 - F.avg(F.when(recent, F.col("is_late").cast("int")))).alias("on_time_rate_last_30d"),
-        F.avg(F.when(recent, F.col("days_late"))).alias("avg_days_late_last_30d"))
+        F.avg(F.when(recent, F.col("days_late"))).alias("avg_days_late_last_30d"),
+        F.avg(F.when(recent & F.col("is_late"), F.col("days_late"))).alias("avg_days_late_when_late_30d"))
     supm = spark.table(f"{FQ}.silver_suppliers").select("supplier_id", "supplier_name", "contract_lead_time_days")
     prod = spark.table(f"{FQ}.silver_products").select("sku_id", "sku_name", "category", "supplier_id", "unit_price", "case_pack", "is_perishable")
     stores = spark.table(f"{FQ}.silver_stores").select("store_id", "store_name", "region")
     position = (onhand.join(stats, ["store_id", "sku_id"], "left").join(prod, "sku_id").join(stores, "store_id")
                 .join(supm, "supplier_id", "left").join(sup, "supplier_id", "left")).toPandas()
     open_at_o = lines.where((F.col("order_date") <= o) & (F.col("received_date").isNull() | (F.col("received_date") > o)))
-    inbound = (open_at_o.join(sup.select("supplier_id", "avg_days_late_last_30d"), "supplier_id", "left")
-               .select("store_id", "sku_id", F.col("order_qty").alias("qty"),
-                       F.datediff("expected_delivery_date", o).alias("expected_day"),
-                       (F.datediff("expected_delivery_date", o) + F.ceil(F.coalesce("avg_days_late_last_30d", F.lit(0.0)))).cast("int").alias("projected_day"))).toPandas()
+    exp_day = F.datediff("expected_delivery_date", o)
+    inbound = (open_at_o.join(sup.select("supplier_id", "avg_days_late_last_30d", "avg_days_late_when_late_30d"), "supplier_id", "left")
+               .select("store_id", "sku_id", F.col("order_qty").alias("qty"), exp_day.alias("expected_day"),
+                       # not yet due: shift by average delay; already overdue: known late, shift by average lateness when late
+                       F.when(exp_day > 0, exp_day + F.ceil(F.coalesce("avg_days_late_last_30d", F.lit(0.0))))
+                        .otherwise(F.greatest(F.lit(1), exp_day + F.ceil(F.coalesce("avg_days_late_when_late_30d", F.lit(2.0)))))
+                        .cast("int").alias("projected_day"))).toPandas()
     return position, inbound
 
 
@@ -81,7 +85,15 @@ risk.insert(1, "as_of_date", as_of)
 risk["model_version"] = int(model_version)
 risk = risk.sort_values(["risk_score", "revenue_at_risk"], ascending=False).reset_index(drop=True)
 risk["risk_rank"] = np.arange(1, len(risk) + 1)
-(spark.createDataFrame(risk).withColumn("scored_at", F.current_timestamp())
+def nan_to_null(sdf):
+    """pandas NaN -> SQL NULL for float columns (Postgres sync and BI tools expect NULL, not NaN)."""
+    for c, t in sdf.dtypes:
+        if t in ("double", "float"):
+            sdf = sdf.withColumn(c, F.when(F.isnan(c), None).otherwise(F.col(c)))
+    return sdf
+
+
+(nan_to_null(spark.createDataFrame(risk)).withColumn("scored_at", F.current_timestamp())
  .write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{FQ}.risk_scores"))
 print(risk.risk_tier.value_counts().to_dict())
 print(risk.recommended_action.value_counts().to_dict())
@@ -109,7 +121,7 @@ rule_cover = (pb.on_hand_units / pb.r28.clip(lower=0.05)).reindex(pd.MultiIndex.
 risk_b["rule_of_thumb_alert"] = rule_cover < pb.contract_lead_time_days.reindex(pd.MultiIndex.from_frame(risk_b[["store_id", "sku_id"]])).to_numpy()
 risk_b["radar_alert"] = risk_b.risk_tier.isin(["Critical", "High"])
 risk_b["as_of_date"] = backtest_origin
-(spark.createDataFrame(risk_b).write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{FQ}.risk_backtest"))
+(nan_to_null(spark.createDataFrame(risk_b)).write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{FQ}.risk_backtest"))
 
 
 def pr(alert, actual):
@@ -118,15 +130,24 @@ def pr(alert, actual):
             "precision": round(tp / max(tp + fp, 1), 4), "recall": round(tp / max(tp + fn, 1), 4)}
 
 
-actual = risk_b.actual_stockout_in_window.astype(bool)
+# Early-warning evaluation: only items that still had stock at the origin (already-empty shelves are known, not predicted)
+risk_b["rule_cover_days"] = rule_cover
+ev = risk_b[risk_b.on_hand_units > 0].copy()
+actual = ev.actual_stockout_in_window.astype(bool)
+n_alerts = int(ev.radar_alert.sum())
+rule_same_volume = ev.rule_cover_days.rank(method="first") <= n_alerts  # rule ranked by lowest cover, same planner workload
+radar_rank = ev.risk_score.rank(ascending=False, method="first")
 bt_summary = {
-    "backtest_origin": str(backtest_origin), "series": len(risk_b), "actual_stockouts_in_window": int(actual.sum()),
-    "radar_critical_high": pr(risk_b.radar_alert, actual),
-    "radar_critical_only": pr(risk_b.risk_tier.eq("Critical"), actual),
-    "rule_of_thumb_cover_lt_leadtime": pr(risk_b.rule_of_thumb_alert.astype(bool), actual),
-    "radar_top_500": pr(risk_b.risk_score.rank(ascending=False, method="first") <= 500, actual),
-    "rule_top_500_lowest_cover": pr(pd.Series(rule_cover).rank(method="first").to_numpy() <= 500, actual),
-    "revenue_at_risk_captured_by_radar_alerts": round(float(risk_b.loc[risk_b.radar_alert & actual, "revenue_at_risk"].sum()), 2),
+    "backtest_origin": str(backtest_origin), "series_evaluated_with_stock_on_hand": len(ev),
+    "series_already_out_of_stock_excluded": int((risk_b.on_hand_units == 0).sum()),
+    "actual_stockouts_in_window": int(actual.sum()),
+    "radar_critical_high": pr(ev.radar_alert, actual),
+    "radar_critical_only": pr(ev.risk_tier.eq("Critical"), actual),
+    "rule_of_thumb_cover_lt_leadtime": pr(ev.rule_of_thumb_alert.astype(bool), actual),
+    "rule_lowest_cover_same_alert_volume": pr(rule_same_volume, actual),
+    "radar_top_500": pr(radar_rank <= 500, actual),
+    "rule_top_500_lowest_cover": pr(ev.rule_cover_days.rank(method="first") <= 500, actual),
+    "lost_revenue_flagged_by_radar_usd": round(float(ev.loc[ev.radar_alert & actual, "revenue_at_risk"].sum()), 2),
 }
 print(json.dumps(bt_summary, indent=2))
 

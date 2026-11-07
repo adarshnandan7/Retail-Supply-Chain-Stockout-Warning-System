@@ -1,0 +1,17 @@
+# Runtime config used when the app is deployed from source; the bundle (resources/app.yml) sets the same values.
+command: ["streamlit", "run", "app.py", "--server.headless", "true"]
+env:
+  - name: UC_CATALOG
+    value: serverless_stable_3vku19_catalog
+  - name: UC_SCHEMA
+    value: inventory_risk
+  - name: DATABRICKS_WAREHOUSE_ID
+    valueFrom: sql-warehouse
+  - name: LAKEBASE_ENDPOINT
+    value: projects/inventory-risk-radar/branches/production/endpoints/primary
+  - name: PGDATABASE
+    value: inventory_risk_app
+  - name: GENIE_SPACE_ID
+    valueFrom: genie-space
+  - name: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+    value: "false"

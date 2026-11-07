@@ -1,0 +1,185 @@
+{
+  "version": 2,
+  "config": {
+    "sample_questions": [
+      {
+        "id": "0bf2c8cbee589530562cb2216bb97262",
+        "question": [
+          "What was the alert precision of the radar compared with the rule of thumb?"
+        ]
+      },
+      {
+        "id": "3700957beb98fac869ad216b3c55ee7c",
+        "question": [
+          "How many Critical and High risks are there by region and primary driver?"
+        ]
+      },
+      {
+        "id": "5c8007bd2eaaa70649d38b2bb19333c5",
+        "question": [
+          "Which 10 store-SKUs have the highest revenue at risk right now?"
+        ]
+      },
+      {
+        "id": "b04ba8e329d74fafd583847efa7c0af3",
+        "question": [
+          "Which items are projected to stock out within 3 days in Metro North?"
+        ]
+      },
+      {
+        "id": "c5e0fd2d70307a598d261e5acef1f3f2",
+        "question": [
+          "What is the forecast WAPE of the model vs the baseline by category?"
+        ]
+      },
+      {
+        "id": "d774e4b3bdc58bf222a62fa00b60823d",
+        "question": [
+          "Which suppliers are causing the most late-delivery risks?"
+        ]
+      }
+    ]
+  },
+  "data_sources": {
+    "tables": [
+      {
+        "identifier": "serverless_stable_3vku19_catalog.inventory_risk.demand_forecast",
+        "description": [
+          "Next-28-day daily forecast per store/SKU (forecast_units) with the seasonal-naive baseline (baseline_units)."
+        ]
+      },
+      {
+        "identifier": "serverless_stable_3vku19_catalog.inventory_risk.forecast_backtest",
+        "description": [
+          "Holdout forecasts vs actuals for the model (lgbm_pred) and baseline (baseline_pred)."
+        ]
+      },
+      {
+        "identifier": "serverless_stable_3vku19_catalog.inventory_risk.gold_current_inventory_position",
+        "description": [
+          "As-of on hand, inbound units, trailing 28-day demand and days of cover per store/SKU."
+        ]
+      },
+      {
+        "identifier": "serverless_stable_3vku19_catalog.inventory_risk.gold_daily_store_sku_sales",
+        "description": [
+          "Two years of daily store/SKU sales, on hand and stockout flags."
+        ]
+      },
+      {
+        "identifier": "serverless_stable_3vku19_catalog.inventory_risk.gold_inbound_po_pipeline",
+        "description": [
+          "Open purchase-order lines with expected and projected arrival dates and supplier lateness."
+        ]
+      },
+      {
+        "identifier": "serverless_stable_3vku19_catalog.inventory_risk.gold_supplier_lead_time_stats",
+        "description": [
+          "Supplier delivery performance: contract vs actual lead time, on-time rate overall and last 30 days."
+        ]
+      },
+      {
+        "identifier": "serverless_stable_3vku19_catalog.inventory_risk.mv_alert_backtest",
+        "description": [
+          "Metric view: alert precision and recall for the radar vs the rule of thumb. Query with MEASURE()."
+        ]
+      },
+      {
+        "identifier": "serverless_stable_3vku19_catalog.inventory_risk.mv_forecast_accuracy",
+        "description": [
+          "Metric view: model vs baseline WAPE and bias. Query with MEASURE()."
+        ]
+      },
+      {
+        "identifier": "serverless_stable_3vku19_catalog.inventory_risk.mv_inventory_risk",
+        "description": [
+          "Metric view: alert counts, revenue at risk, cover and excess. Query with MEASURE()."
+        ]
+      },
+      {
+        "identifier": "serverless_stable_3vku19_catalog.inventory_risk.mv_stockout_history",
+        "description": [
+          "Metric view: historical stockout rate. Query with MEASURE()."
+        ]
+      },
+      {
+        "identifier": "serverless_stable_3vku19_catalog.inventory_risk.risk_backtest",
+        "description": [
+          "Risk scores computed 4 weeks ago with the actual outcome (actual_stockout_in_window) for alert-precision analysis."
+        ]
+      },
+      {
+        "identifier": "serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations",
+        "description": [
+          "Current ranked stockout risks per store/SKU with drivers, suggested action and planner note. One row per store/SKU for the latest as_of_date."
+        ]
+      }
+    ]
+  },
+  "instructions": {
+    "text_instructions": [
+      {
+        "id": "fad58de7366495db4650cfefac2fcd61",
+        "content": [
+          "You answer questions for Harvest Lane Markets, a 50-store grocery chain (5 regions: Metro North, Metro South, Coastal, Valley, Lakeshore; 400 SKUs in 10 categories). Users are replenishment planners, store managers and the VP of Supply Chain.\n\nBusiness definitions (use these exactly):\n- \"Risk\" / \"stockout risk\" / \"alerts\" = rows in risk_recommendations. \"Alerts\" or \"exceptions\" means risk_tier IN ('Critical','High') unless the user says otherwise.\n- Risk score 0-100 = 100 x stockout probability x (0.6 + 0.4 x value weight). Tiers: Critical >= 70, High >= 45, Medium >= 25, Low < 25.\n- Replenishment window (lead_time_window_days) = p90 actual supplier lead time over the last 90 days + 1 review day. A stockout risk means demand over that window is likely to exceed on hand + inbound arriving inside it.\n- Revenue at risk = expected lost units x unit price, in USD. Always format as currency.\n- Days of cover = on hand / average forecast daily demand for the next 7 days. Excess inventory = more than 45 days of cover.\n- Stockout rate = share of store/SKU/days that ended with zero on hand (gold_daily_store_sku_sales.is_stockout). On-shelf availability = 1 - stockout rate.\n- Forecast error = WAPE = sum(|actual - forecast|) / sum(actual), on days without a stockout. Lower is better. The champion model is lgbm_pred; the baseline (seasonal naive, what planners use today) is baseline_pred.\n- Alert precision = share of Critical/High alerts in risk_backtest that actually stocked out within their window (actual_stockout_in_window). Recall = share of actual stockouts that were alerted. Compare with rule_of_thumb_alert (days of cover < contract lead time), which is today's process.\n- Suggested actions: EXPEDITE (chase a late supplier PO), TRANSFER (move stock from a store in the same region with spare cover; action_source_id is the donor store), REORDER (additional supplier order, case-pack rounded), MONITOR (no action). These are suggestions only; planners decide.\n- \"This week\" / \"right now\" / \"today\" refers to the latest as_of_date in risk_recommendations. Forecast dates are target_date in demand_forecast.\n\nGuidance:\n- Prefer the metric views (mv_*) for KPI questions and use MEASURE(<measure>) with GROUP BY on their dimensions.\n- When listing risky items, show store_name, sku_name, risk_tier, risk_score, revenue_at_risk, primary_driver, recommended_action, recommended_qty, ordered by risk_rank.\n- Round probabilities to percentages and money to whole dollars. Limit lists to 20 rows unless asked.\n- Never claim an order was placed; the system only recommends.\n"
+        ]
+      }
+    ],
+    "example_question_sqls": [
+      {
+        "id": "0ba81ab50a34c9560ac8c1dc6742abf3",
+        "question": [
+          "Alert precision of the radar vs the rule of thumb"
+        ],
+        "sql": [
+          "SELECT MEASURE(radar_alerts) AS radar_alerts, ROUND(MEASURE(radar_alert_precision) * 100, 1) AS radar_precision_pct, ROUND(MEASURE(radar_alert_recall) * 100, 1) AS radar_recall_pct, MEASURE(rule_alerts) AS rule_alerts, ROUND(MEASURE(rule_alert_precision) * 100, 1) AS rule_precision_pct, ROUND(MEASURE(rule_alert_recall) * 100, 1) AS rule_recall_pct\nFROM serverless_stable_3vku19_catalog.inventory_risk.mv_alert_backtest"
+        ]
+      },
+      {
+        "id": "0e99eec0adf27e7db18c44bf73034486",
+        "question": [
+          "Top 10 store-SKUs by revenue at risk"
+        ],
+        "sql": [
+          "SELECT risk_rank, store_name, sku_name, risk_tier, risk_score, ROUND(revenue_at_risk, 0) AS revenue_at_risk_usd, primary_driver, recommended_action, recommended_qty\nFROM serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations\nWHERE risk_tier IN ('Critical', 'High')\nORDER BY revenue_at_risk DESC\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "2a58f15354c2cb08c240f77f655f56bc",
+        "question": [
+          "Monthly stockout rate trend"
+        ],
+        "sql": [
+          "SELECT sale_month, ROUND(MEASURE(stockout_rate) * 100, 2) AS stockout_rate_pct\nFROM serverless_stable_3vku19_catalog.inventory_risk.mv_stockout_history\nGROUP BY sale_month\nORDER BY sale_month"
+        ]
+      },
+      {
+        "id": "99feb7395390781e569c1786fee75987",
+        "question": [
+          "Alerts and revenue at risk by region"
+        ],
+        "sql": [
+          "SELECT region, MEASURE(critical_alerts) AS critical_alerts, MEASURE(critical_high_alerts) AS critical_high_alerts, ROUND(MEASURE(revenue_at_risk_critical_high), 0) AS revenue_at_risk_usd\nFROM serverless_stable_3vku19_catalog.inventory_risk.mv_inventory_risk\nGROUP BY region\nORDER BY critical_high_alerts DESC"
+        ]
+      },
+      {
+        "id": "abbfdbed22f32bde56429977674a80e3",
+        "question": [
+          "Forecast WAPE model vs baseline by category"
+        ],
+        "sql": [
+          "SELECT category, ROUND(MEASURE(model_wape), 3) AS model_wape, ROUND(MEASURE(baseline_wape), 3) AS baseline_wape, ROUND(MEASURE(wape_improvement_pct), 1) AS improvement_pct\nFROM serverless_stable_3vku19_catalog.inventory_risk.mv_forecast_accuracy\nGROUP BY category\nORDER BY improvement_pct DESC"
+        ]
+      },
+      {
+        "id": "f2b74bd43a0ed4011eb3f9734b36bb38",
+        "question": [
+          "Which suppliers drive the most late-delivery risks?"
+        ],
+        "sql": [
+          "SELECT r.supplier_name, COUNT(*) AS critical_high_alerts, ROUND(SUM(r.revenue_at_risk), 0) AS revenue_at_risk_usd, ROUND(MAX(s.on_time_rate_last_30d) * 100, 1) AS on_time_pct_last_30d, MAX(s.overdue_open_lines) AS overdue_open_po_lines\nFROM serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations r\nJOIN serverless_stable_3vku19_catalog.inventory_risk.gold_supplier_lead_time_stats s ON r.supplier_id = s.supplier_id\nWHERE r.risk_tier IN ('Critical', 'High') AND r.primary_driver = 'Late supplier delivery'\nGROUP BY r.supplier_name\nORDER BY critical_high_alerts DESC"
+        ]
+      }
+    ]
+  }
+}

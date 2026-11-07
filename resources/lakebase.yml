@@ -23,3 +23,16 @@ resources:
       database_id: inventory-risk-app
       postgres_database: inventory_risk_app
       role: ${resources.postgres_projects.inventory_risk_lakebase.name}/branches/production/roles/${var.lakebase_owner_role}
+
+  postgres_synced_tables:
+    risk_recommendations_online:
+      synced_table_id: ${var.catalog}.${var.schema}.risk_recommendations_online
+      source_table_full_name: ${var.catalog}.${var.schema}.risk_recommendations
+      branch: ${resources.postgres_projects.inventory_risk_lakebase.name}/branches/production
+      postgres_database: ${resources.postgres_databases.app_db.postgres_database}
+      primary_key_columns: [recommendation_id]
+      scheduling_policy: SNAPSHOT
+      create_database_objects_if_missing: true
+      new_pipeline_spec:
+        storage_catalog: ${var.catalog}
+        storage_schema: ${var.schema}

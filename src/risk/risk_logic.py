@@ -2,10 +2,11 @@
 
 For each store/SKU at forecast origin `o`:
 
-1. Replenishment window W = p90 actual supplier lead time (last 90 days) + 1 review day, clipped to [2, 28].
-   "Will this item run out before an order placed today could arrive?"
-2. Projected availability by day h = on hand + inbound units whose *projected* arrival (expected date shifted
-   by the supplier's recent average delay) is on or before day h.
+1. Replenishment window W = mean actual supplier lead time over the last 30 days (rounded up, min 2 days):
+   "Will this item run out before an order placed today would arrive, given how the supplier is performing now?"
+2. Projected availability by day h = on hand + inbound units whose *projected* arrival is on or before day h.
+   Lines not yet due are shifted by the supplier's recent average delay; lines already overdue are shifted by
+   the supplier's recent average lateness *when late* (they are known to be late).
 3. Cumulative forecast demand by day h from the @champion model.
 4. Stockout probability = max over h <= W of P(demand_1..h > available_h), with demand ~ Normal(cum forecast,
    sigma_daily * sqrt(h)), sigma_daily from recent non-stockout sales variability (Poisson floor).
@@ -16,7 +17,7 @@ For each store/SKU at forecast origin `o`:
    (promotion / holiday ramp / demand trend), inbound units delayed past the window by a late supplier,
    recent demand surge, and structural cover gap (not enough stock or no open PO even at baseline demand).
 8. Recommended action (decision support only, nothing is ordered automatically):
-   EXPEDITE when delayed inbound explains most of the gap, TRANSFER when a store in the same region has spare
+   EXPEDITE when late inbound units exist and the item is projected to run out before they arrive, TRANSFER when a store in the same region has spare
    cover, otherwise REORDER (case-pack rounded); MONITOR for Low tier.
 """
 import math
@@ -50,9 +51,11 @@ def score(position: pd.DataFrame, forecast: pd.DataFrame, inbound: pd.DataFrame)
 
     inb = inbound.copy()
     inb["proj_day"] = inb["projected_day"].clip(lower=1)
+    inb["exp_day"] = inb["expected_day"].clip(lower=1)
+    inb["is_late"] = (inb["expected_day"] <= 0) | (inb["projected_day"] > inb["expected_day"])
     in_proj = np.zeros_like(F_)
     in_exp = np.zeros_like(F_)
-    for col, mat in (("proj_day", in_proj), ("expected_day", in_exp)):
+    for col, mat in (("proj_day", in_proj), ("exp_day", in_exp)):
         sub = inb[inb[col].between(1, H)]
         if len(sub):
             m = sub.pivot_table(index=["store_id", "sku_id"], columns=col, values="qty", aggfunc="sum").reindex(
@@ -61,10 +64,11 @@ def score(position: pd.DataFrame, forecast: pd.DataFrame, inbound: pd.DataFrame)
     overdue_lines = inb[inb["expected_day"] <= 0].groupby(["store_id", "sku_id"]).size().reindex(keys).fillna(0).to_numpy()
     inbound_total = inb.groupby(["store_id", "sku_id"])["qty"].sum().reindex(keys).fillna(0).to_numpy()
     next_arrival = inb.groupby(["store_id", "sku_id"])["proj_day"].min().reindex(keys).to_numpy()
+    late = inb[inb.is_late]
 
     on_hand = pos["on_hand_units"].fillna(0).to_numpy(dtype=float)
-    lt = pos["p90_lead_time_days"].fillna(pos["contract_lead_time_days"]).to_numpy(dtype=float)
-    W = np.clip(np.ceil(lt) + 1, 2, H).astype(int)
+    lt = pos["avg_lead_time_30d"].fillna(pos["contract_lead_time_days"]).to_numpy(dtype=float)
+    W = np.clip(np.ceil(lt), 2, H).astype(int)
     r28 = pos["r28"].fillna(0).to_numpy(dtype=float)
     r7 = pos["r7"].fillna(0).to_numpy(dtype=float)
     sigma_d = np.maximum(pos["r28_std"].fillna(0).to_numpy(dtype=float), np.sqrt(np.maximum(r28, 0.1)))
@@ -102,7 +106,12 @@ def score(position: pd.DataFrame, forecast: pd.DataFrame, inbound: pd.DataFrame)
     holiday_in_w = hol1 <= (W + 2)
     exp_cum_W = in_exp.cumsum(1)[idx, w_i]
     proj_cum_W = in_proj.cumsum(1)[idx, w_i]
-    delayed = np.maximum(exp_cum_W - proj_cum_W, 0)
+    # late units the plan was counting on inside the window, and when they are now projected to land
+    late_w = late.merge(pd.DataFrame({"store_id": keys.get_level_values(0), "sku_id": keys.get_level_values(1), "W": W}),
+                        on=["store_id", "sku_id"])
+    late_w = late_w[late_w.exp_day <= late_w.W]
+    delayed = late_w.groupby(["store_id", "sku_id"])["qty"].sum().reindex(keys).fillna(0).to_numpy(dtype=float)
+    late_arrival = late_w.groupby(["store_id", "sku_id"])["proj_day"].min().reindex(keys).to_numpy(dtype=float)
     surge = np.where(r7 > 1.25 * r28, (r7 - r28) * W, 0)
     struct_gap = np.maximum(cumB[idx, w_i] - (on_hand + exp_cum_W), 0)
 
@@ -115,7 +124,7 @@ def score(position: pd.DataFrame, forecast: pd.DataFrame, inbound: pd.DataFrame)
             d.append((label, uplift[i], f"{label}: forecast +{uplift[i]:.0f} units vs. usual over the next {W[i]} days"))
         if delayed[i] > 0 or overdue_lines[i] > 0:
             ot = "" if np.isnan(sup_ot[i]) else f", supplier on-time {sup_ot[i]:.0%} last 30d"
-            d.append(("Late supplier delivery", max(delayed[i], 1.0), f"Late supplier delivery: {delayed[i]:.0f} inbound units now projected after the window ({int(overdue_lines[i])} PO lines overdue{ot})"))
+            d.append(("Late supplier delivery", max(delayed[i], 1.0), f"Late supplier delivery: {delayed[i]:.0f} inbound units are late; now projected in {0 if np.isnan(late_arrival[i]) else int(late_arrival[i])} days ({int(overdue_lines[i])} PO lines overdue{ot})"))
         if surge[i] > 0.5:
             d.append(("Recent demand surge", surge[i], f"Recent demand surge: last 7 days {r7[i]:.1f}/day vs. 28-day {r28[i]:.1f}/day"))
         if struct_gap[i] > 0.5:
@@ -153,6 +162,7 @@ def score(position: pd.DataFrame, forecast: pd.DataFrame, inbound: pd.DataFrame)
     out["open_po_overdue_lines"] = overdue_lines.astype(int)
     out["forecast_uplift_units"] = np.round(uplift, 1)
     out["delayed_inbound_units"] = np.round(delayed, 1)
+    out["late_inbound_arrival_in_days"] = late_arrival
 
     # spare units per series for transfers: on hand beyond forecast need for its own window + 7 days safety
     need_self = cumF[idx, np.minimum(w_i + 7, H - 1)] + 1.28 * sig_h[idx, np.minimum(w_i + 7, H - 1)]
@@ -172,7 +182,9 @@ def _actions(out: pd.DataFrame, sig_W: np.ndarray) -> pd.DataFrame:
         if r.risk_tier == "Low":
             action.append("MONITOR"); qty.append(0); src.append(None); continue
         n = max(need[i], r.case_pack)
-        if r.delayed_inbound_units > 0 and r.delayed_inbound_units >= 0.5 * max(r.expected_shortfall_units, 1):
+        runs_out_first = pd.notna(r.projected_stockout_in_days) and pd.notna(r.late_inbound_arrival_in_days) and \
+            r.projected_stockout_in_days <= r.late_inbound_arrival_in_days
+        if r.delayed_inbound_units > 0 and runs_out_first:
             action.append("EXPEDITE"); qty.append(int(r.delayed_inbound_units)); src.append(r.supplier_id)
         elif pd.notna(r.donor_store_id) and r.donor_store_id != r.store_id and r.donor_spare >= min(n, r.case_pack):
             action.append("TRANSFER"); qty.append(int(min(n, r.donor_spare))); src.append(r.donor_store_id)

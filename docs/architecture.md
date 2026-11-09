@@ -18,7 +18,7 @@
                                      gold_supplier_lead_time_stats, gold_inbound_po_pipeline,     ▼                          └─ Ask Genie tab (Conversation API)
                                      gold_current_inventory_position, gold_promo_store_sku_daily  risk_recommendations (Delta, CDF)
                                                                                                   │                          Genie space (metric definitions, certified SQL)
- Unity Catalog: one schema `inventory_risk` - tables, volumes, model, functions, metric views,   ├─> v_planner_risk_queue      AI/BI dashboard (ranked exceptions, accuracy)
+ Unity Catalog: one schema `inventory_risk` - tables, volumes, model, functions, metric views,   ├─> planner_risk_queue        AI/BI dashboard (ranked exceptions, accuracy)
  tags, comments, lineage, row filter/mask view, grants; MLflow experiment + UC model registry.    └─> mv_* metric views          planner_action_history (Lakebase -> Delta)
 ```
 
@@ -35,7 +35,9 @@
 | Replenishment window = mean actual supplier lead time over the last 30 days | Asks "will this run out before an order placed today arrives, given how the supplier is performing now" - picks up supplier disruptions immediately. |
 | Overdue PO lines projected with the supplier's lateness-when-late | A line that is already late is not arriving tomorrow; this is what surfaces EXPEDITE actions. |
 | Lakebase for app state, Delta for analytics | Decisions and notes need row-level transactional writes with low latency; history and KPIs belong in the lakehouse. Synced table keeps one source of truth (Delta) for recommendations. |
-| Governed dynamic view instead of filters on base tables | Base tables are rewritten every run and feed the synced table; consumers get region row-filtering and revenue masking through `v_planner_risk_queue`. |
+| Enforced UC row filter + column mask on a planner-facing table | `risk_recommendations` feeds the Lakebase synced table, so policies sit on `planner_risk_queue`: a `ROW FILTER` scopes rows by region (entitlement table `planner_region_access` for store-level planners, else groups) and a `MASK` hides revenue at risk. The job tests enforcement every run. |
+| Drift-triggered retraining | `drift_check` scores the `@champion` on the latest 28 days; a `condition_task` runs `train_forecast` only on drift, loss to baseline, staleness or no champion. Promotion requires beating both the baseline and the current champion. Decisions are logged to `model_monitoring`. |
+| Quality gate on Gen AI notes | Deterministic checks (numbers, action, quantity, length) plus an LLM judge from a different model family. Results are in MLflow and `risk_explanation_eval`; failing notes fall back to the template. |
 | Metric views for KPIs | Forecast error, stockout rate, cover/excess and alert precision are defined once and reused by Genie, the dashboard and the readout. |
 | Everything in a Databricks Asset Bundle | Schema, volumes, pipeline, job, experiment, model, Lakebase project/database/synced table, Genie space, dashboard and app deploy with `databricks bundle deploy`. |
 
@@ -44,7 +46,7 @@
 * App runs as its own service principal; resources (warehouse `CAN_USE`, Lakebase `CAN_CONNECT_AND_CREATE`, Genie `CAN_RUN`, table `SELECT`) are declared in `resources/app.yml`.
 * Lakebase uses short-lived OAuth tokens (refreshed before the 1-hour expiry); no passwords or secrets in code.
 * Users authenticate through workspace SSO; the app records the signed-in planner's email from the forwarded identity header.
-* Consumers query `v_planner_risk_queue` (row filter by region group, revenue masked unless `supply_chain_finance`/admin).
+* Consumers query `planner_risk_queue`, with an enforced UC row filter by region and a column mask on revenue at risk; a per-run enforcement test is recorded in `evidence/13_row_filter_enforcement.md`.
 * Synthetic data only; no customer data.
 
 ## Running it

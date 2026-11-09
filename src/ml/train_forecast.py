@@ -157,7 +157,16 @@ by_cat["wape_reduction_pct"] = ((by_cat.baseline_wape - by_cat.lgbm_wape) / by_c
 print(by_cat.to_string(index=False))
 
 client = MlflowClient()
-winner = "lightgbm" if m_l["holdout_wape"] < m_b["holdout_wape"] else "baseline"
+# Champion/challenger: the new model must beat the seasonal-naive baseline AND be at least as good as the current
+# champion's WAPE on the latest window (measured by the drift_check task that triggered this retrain).
+try:
+    current_champion_wape = float(dbutils.jobs.taskValues.get(taskKey="drift_check", key="champion_current_wape", default="", debugValue="") or "inf")
+except Exception:
+    current_champion_wape = float("inf")
+beats_baseline = m_l["holdout_wape"] < m_b["holdout_wape"]
+beats_champion = m_l["holdout_wape"] <= current_champion_wape
+winner = "lightgbm" if (beats_baseline and beats_champion) else ("baseline" if not beats_baseline else "current_champion")
+print(f"beats baseline={beats_baseline}, beats current champion ({current_champion_wape})={beats_champion} -> {winner}")
 registered = None
 if winner == "lightgbm":
     mv = mlflow.register_model(f"runs:/{lgbm_run_id}/model", MODEL_NAME)
@@ -167,6 +176,7 @@ if winner == "lightgbm":
         f"seasonal-naive {m_b['holdout_wape']:.3f} (origin {holdout_origin})."))
     client.set_model_version_tag(MODEL_NAME, mv.version, "holdout_wape", f"{m_l['holdout_wape']:.4f}")
     client.set_model_version_tag(MODEL_NAME, mv.version, "baseline_wape", f"{m_b['holdout_wape']:.4f}")
+    client.set_model_version_tag(MODEL_NAME, mv.version, "holdout_origin", str(holdout_origin))
     registered = int(mv.version)
 print(f"winner={winner} registered={MODEL_NAME} v{registered} alias=@champion")
 
@@ -188,7 +198,8 @@ spark.sql(f"COMMENT ON TABLE {FQ}.forecast_backtest IS 'Holdout (backtest) forec
 summary = {"holdout_origin": str(holdout_origin), "train_rows": len(train), "holdout_rows_scored": len(hold_eval),
            "baseline": {k: round(v, 4) for k, v in m_b.items()}, "lightgbm": {k: round(float(v), 4) for k, v in m_l.items()},
            "wape_reduction_pct": round((m_b["holdout_wape"] - m_l["holdout_wape"]) / m_b["holdout_wape"] * 100, 1),
-           "winner": winner, "registered_model": MODEL_NAME, "registered_version": registered,
+           "winner": winner, "current_champion_wape_before": current_champion_wape if current_champion_wape != float("inf") else None,
+           "registered_model": MODEL_NAME, "registered_version": registered,
            "mlflow_runs": {"baseline": baseline_run_id, "lightgbm": lgbm_run_id}, "experiment": EXPERIMENT,
            "by_category": by_cat.to_dict(orient="records"), "top_features": imp.head(10).to_dict(orient="records")}
 with open(f"{EVIDENCE}/04_model_comparison.json", "w") as fh:

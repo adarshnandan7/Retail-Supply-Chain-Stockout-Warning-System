@@ -21,6 +21,8 @@ resources:
           default: ${var.as_of_date}
         - name: llm_endpoint
           default: ${var.llm_endpoint}
+        - name: drift_threshold_pct
+          default: "10"
         - name: app_sp_client_id
           default: ${resources.apps.planner_app.service_principal_client_id}
       tasks:
@@ -36,9 +38,25 @@ resources:
             pipeline_id: ${resources.pipelines.inventory_risk_pipeline.id}
             full_refresh: true
 
-        - task_key: train_forecast
-          description: "Baseline vs LightGBM, MLflow tracking, UC registration with @champion"
+        - task_key: drift_check
+          description: "Score the @champion on the latest 28 days; decide whether to retrain (accuracy drift, lost to baseline, stale, or no champion)"
           depends_on: [{task_key: lakeflow_pipeline}]
+          notebook_task:
+            notebook_path: ../src/ml/drift_check.py
+            base_parameters:
+              drift_threshold_pct: "{{job.parameters.drift_threshold_pct}}"
+
+        - task_key: needs_retrain
+          description: "Condition: retrain only when the drift check says so"
+          depends_on: [{task_key: drift_check}]
+          condition_task:
+            op: EQUAL_TO
+            left: "{{tasks.drift_check.values.retrain}}"
+            right: "true"
+
+        - task_key: train_forecast
+          description: "Retrain: baseline vs LightGBM, MLflow tracking, promote to @champion only if it beats baseline and the current champion"
+          depends_on: [{task_key: needs_retrain, outcome: "true"}]
           max_retries: 1
           notebook_task:
             notebook_path: ../src/ml/train_forecast.py
@@ -46,7 +64,12 @@ resources:
               experiment_name: ${resources.experiments.demand_forecast_experiment.name}
 
         - task_key: batch_forecast
-          depends_on: [{task_key: train_forecast}]
+          description: "28-day forecast with whichever model holds @champion (retrained or existing)"
+          depends_on:
+            - task_key: train_forecast
+            - task_key: needs_retrain
+              outcome: "false"
+          run_if: AT_LEAST_ONE_SUCCESS
           notebook_task:
             notebook_path: ../src/ml/batch_forecast.py
 
@@ -60,8 +83,16 @@ resources:
           notebook_task:
             notebook_path: ../src/risk/genai_explanations.py
 
-        - task_key: apply_governance
+        - task_key: evaluate_explanations
+          description: "Quality gate for Gen AI notes: deterministic faithfulness checks + LLM judge, logged to MLflow; failing notes fall back to the template"
           depends_on: [{task_key: genai_explanations}]
+          notebook_task:
+            notebook_path: ../src/risk/evaluate_explanations.py
+            base_parameters:
+              eval_experiment: ${resources.experiments.planner_note_eval_experiment.name}
+
+        - task_key: apply_governance
+          depends_on: [{task_key: evaluate_explanations}]
           notebook_task:
             notebook_path: ../src/governance/apply_governance.py
 

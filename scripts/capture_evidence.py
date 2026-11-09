@@ -83,7 +83,7 @@ ORDER BY timestamp""")
     body += sql_section("Sample: gold_supplier_lead_time_stats (worst on-time first)", f"SELECT * FROM {FQ}.gold_supplier_lead_time_stats ORDER BY on_time_rate_last_30d LIMIT 8")
     body += sql_section("Sample: demand_forecast", f"SELECT * FROM {FQ}.demand_forecast WHERE store_id = 'S001' AND sku_id = 'P00043' ORDER BY horizon LIMIT 10")
     body += sql_section("Unity Catalog tags on published objects", f"""SELECT table_name, collect_list(concat(tag_name, '=', tag_value)) AS tags
-FROM {CAT}.information_schema.table_tags WHERE schema_name = '{SCH}' AND table_name IN ('risk_recommendations','v_planner_risk_queue','mv_inventory_risk','gold_daily_store_sku_sales','demand_forecast')
+FROM {CAT}.information_schema.table_tags WHERE schema_name = '{SCH}' AND table_name IN ('risk_recommendations','planner_risk_queue','mv_inventory_risk','gold_daily_store_sku_sales','demand_forecast')
 GROUP BY table_name ORDER BY table_name""")
     write("03_table_profiles.md", "Table profiles across bronze / silver / gold / ML / serving", body)
 
@@ -131,7 +131,9 @@ FROM {FQ}.risk_recommendations WHERE recommended_action = 'EXPEDITE' GROUP BY su
           "How many Critical and High risks are there by region?",
           "Which suppliers are causing the most late-delivery risks?",
           "What is the forecast WAPE of the model vs the baseline by category?",
-          "What was the alert precision of the radar compared with the rule of thumb?"]
+          "What was the alert precision of the radar compared with the rule of thumb?",
+          "Explain the recommendation for green beans at Stonebrook",
+          "How good are the Gen AI planner notes?"]
     out = [f"\nGenie space `{space_id}` (bundle resource `inventory_risk_genie`). Questions asked through the Genie Conversation API.\n"]
     for qn in qs:
         msg = w.genie.start_conversation_and_wait(space_id, qn)
@@ -149,6 +151,48 @@ FROM {FQ}.risk_recommendations WHERE recommended_action = 'EXPEDITE' GROUP BY su
                     out.append(f"\n(result fetch failed: {e})\n")
         time.sleep(2)
     write("07_genie_answers.md", "Genie: natural-language questions over the governed risk data", "".join(out))
+
+    # ---- 7b. Gen AI note evaluation ----
+    ge = json.loads((EV / "run_summaries" / "05d_genai_eval.json").read_text())
+    m = ge["metrics"]
+    body = (f"\n- Writer: `{ge['writer_endpoint']}` | Judge: `{ge['judge_endpoint']}` (a different model)\n- MLflow experiment `{ge['experiment']}`, run `{ge['mlflow_run_id']}`\n"
+            f"- Quality gate (final pass rate >= {ge['min_pass_rate']:.0%}): **{ge['quality_gate']}**; {ge['notes_replaced_by_template']} failing notes replaced by the deterministic template before publishing\n\n"
+            "| Metric | Value |\n|---|---|\n" + "".join(f"| {k} | {v:.3f} |\n" if isinstance(v, float) else f"| {k} | {v} |\n" for k, v in m.items()))
+    body += sql_section("Failing notes and why (judge issue / unsupported numbers)", f"""SELECT recommendation_id, recommended_action, recommended_qty, unsupported_numbers, action_match, quantity_match, sentence_count,
+  judge_faithfulness, judge_verdict, judge_issue FROM {FQ}.risk_explanation_eval WHERE NOT final_pass ORDER BY judge_faithfulness LIMIT 10""")
+    body += sql_section("Passing notes (sample)", f"SELECT recommendation_id, judge_faithfulness, judge_actionability, judge_clarity, llm_explanation FROM {FQ}.risk_explanation_eval WHERE final_pass LIMIT 4")
+    body += sql_section("Published notes: LLM vs template after the gate", f"SELECT explanation_is_llm, count(*) AS rows FROM {FQ}.risk_recommendations WHERE risk_tier IN ('Critical','High') GROUP BY 1")
+    write("12_genai_note_evaluation.md", "Gen AI planner notes: evaluation and quality gate", body)
+
+    # ---- 7c. Row filter / mask enforcement ----
+    gv = json.loads((EV / "run_summaries" / "06_governance.json").read_text())["enforcement_test"]
+    fmt = lambda rows: "| region | rows visible | revenue values visible |\n|---|---|---|\n" + "".join(f"| {r['region']} | {r['rows_visible']} | {r['revenue_values_visible']} |\n" for r in rows)
+    body = (f"\nTest identity: `{gv['principal']}` (the job's run-as user). The job maps it to **Valley only, without financials**, queries "
+            f"`planner_risk_queue`, then removes the mapping. Assertions in the job: row filter enforced = **{gv['row_filter_enforced']}**, "
+            f"mask enforced = **{gv['mask_enforced']}**.\n\n### Before mapping (admin, unmapped)\n\n{fmt(gv['before_mapping'])}"
+            f"\n### Mapped to Valley, no financials\n\n{fmt(gv['mapped_to_valley_no_financials'])}\n### After mapping removed\n\n{fmt(gv['after_mapping_removed'])}"
+            "\n### Policies attached to the table (`DESCRIBE TABLE EXTENDED`)\n\n| item | value |\n|---|---|\n"
+            + "".join(f"| {r['col_name']} | {r['data_type']} |\n" for r in gv["describe_row_filter_and_mask"] if r["data_type"]))
+    body += sql_section("Row filter and mask functions", f"""SELECT routine_name, routine_definition FROM {CAT}.information_schema.routines
+WHERE routine_schema = '{SCH}' AND routine_name IN ('region_row_filter', 'mask_revenue') ORDER BY 1""")
+    write("13_row_filter_enforcement.md", "Unity Catalog row filter and column mask: enforcement test", body)
+
+    # ---- 7d. Drift monitoring ----
+    body = sql_section("model_monitoring (every drift check, newest first)", f"""SELECT checked_at, as_of_date, champion_version, champion_current_wape, champion_registered_wape, baseline_current_wape,
+  degradation_pct, drift_threshold_pct, retrain, reasons FROM {FQ}.model_monitoring ORDER BY checked_at DESC LIMIT 10""")
+    for rid in [x for x in os.environ.get("DRIFT_RUNS", str(run_id)).split(",") if x]:
+        rr = w.jobs.get_run(int(rid))
+        params = {p.name: p.value for p in (rr.job_parameters or [])}
+        body += (f"\n### Job run `{rid}` (drift_threshold_pct = {params.get('drift_threshold_pct', '10')}) - {rr.state.result_state.value if rr.state.result_state else ''}\n\n"
+                 "| Task | Result |\n|---|---|\n" + "".join(
+                     f"| {t.task_key} | {t.state.result_state.value if t.state.result_state else t.state.life_cycle_state.value} |\n"
+                     for t in sorted(rr.tasks, key=lambda t: t.start_time or 9e15) if t.task_key in ("drift_check", "needs_retrain", "train_forecast", "batch_forecast")))
+    vers = w.model_versions.list(f"{FQ}.demand_forecast")
+    body += "\n### Registered model versions\n\n| version | created | aliases |\n|---|---|---|\n"
+    champ = w.model_versions.get_by_alias(f"{FQ}.demand_forecast", "champion").version
+    for v in sorted(vers, key=lambda v: v.version):
+        body += f"| {v.version} | {datetime.fromtimestamp(v.created_at / 1000, timezone.utc):%Y-%m-%d %H:%M} | {'@champion' if v.version == champ else ''} |\n"
+    write("14_drift_monitoring.md", "Forecast drift check and conditional retraining", body)
 
     # ---- 8. Lakebase ----
     lb = json.loads((EV / "run_summaries" / "08_lakebase.json").read_text())

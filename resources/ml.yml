@@ -2,6 +2,8 @@ resources:
   experiments:
     demand_forecast_experiment:
       name: /Users/adarsh.nandan@databricks.com/inventory-risk-radar-demand-forecast
+    planner_note_eval_experiment:
+      name: /Users/adarsh.nandan@databricks.com/inventory-risk-radar-planner-note-eval
   registered_models:
     demand_forecast:
       catalog_name: ${var.catalog}

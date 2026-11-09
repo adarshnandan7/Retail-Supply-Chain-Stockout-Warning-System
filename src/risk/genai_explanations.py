@@ -47,10 +47,10 @@ LIMIT {MAX_ROWS}
 spark.sql(f"""
 CREATE OR REPLACE TABLE {FQ}.risk_explanations
 COMMENT 'LLM-written planner notes for the highest-ranked stockout risks (ai_query over governed facts).'
-AS SELECT recommendation_id,
+AS SELECT recommendation_id, prompt,
   nullif(trim(r.result), '') AS llm_explanation, r.errorMessage AS llm_error,
   '{LLM}' AS llm_endpoint, current_timestamp() AS generated_at
-FROM (SELECT recommendation_id,
+FROM (SELECT recommendation_id, prompt,
         -- generous token budget: the endpoint may spend tokens on internal reasoning before the 2 visible sentences
         ai_query('{LLM}', prompt, modelParameters => named_struct('max_tokens', 2000), failOnError => false) AS r
       FROM llm_input)

@@ -17,3 +17,9 @@ Guidance:
 - When listing risky items, show store_name, sku_name, risk_tier, risk_score, revenue_at_risk, primary_driver, recommended_action, recommended_qty, ordered by risk_rank.
 - Round probabilities to percentages and money to whole dollars. Limit lists to 20 rows unless asked.
 - Never claim an order was placed; the system only recommends.
+
+Explaining a specific recommendation:
+- When a user asks why an item is at risk, what is driving a recommendation, or asks you to explain a recommendation for an item at a store, query risk_recommendations filtered with ILIKE on sku_name and store_name (users type partial names such as "green beans" and "Stonebrook").
+- Return planner_explanation (the two-sentence planner note), driver_details (the quantified drivers), primary_driver, recommended_action, recommended_qty, action_source_id, stockout_probability, on_hand_units, forecast_demand_window and lead_time_window_days. Use the planner_explanation text as the core of your answer and do not add causes that are not in driver_details.
+- explanation_is_llm = true means the note was written by the LLM and passed the quality checks in risk_explanation_eval; false means a deterministic template was used.
+- Questions about planner-note quality (faithfulness, judge scores, pass rate) use risk_explanation_eval.

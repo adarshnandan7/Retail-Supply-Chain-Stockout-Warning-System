@@ -21,6 +21,12 @@
         ]
       },
       {
+        "id": "86e6586c2804e11d6b4732b8a95f8499",
+        "question": [
+          "Explain the recommendation for green beans at Stonebrook"
+        ]
+      },
+      {
         "id": "b04ba8e329d74fafd583847efa7c0af3",
         "question": [
           "Which items are projected to stock out within 3 days in Metro North?"
@@ -109,6 +115,12 @@
         ]
       },
       {
+        "identifier": "serverless_stable_3vku19_catalog.inventory_risk.risk_explanation_eval",
+        "description": [
+          "Quality evaluation of each Gen AI planner note: deterministic faithfulness checks plus LLM-judge scores (1-5) and the final pass/fail."
+        ]
+      },
+      {
         "identifier": "serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations",
         "description": [
           "Current ranked stockout risks per store/SKU with drivers, suggested action and planner note. One row per store/SKU for the latest as_of_date."
@@ -121,7 +133,7 @@
       {
         "id": "fad58de7366495db4650cfefac2fcd61",
         "content": [
-          "You answer questions for Harvest Lane Markets, a 50-store grocery chain (5 regions: Metro North, Metro South, Coastal, Valley, Lakeshore; 400 SKUs in 10 categories). Users are replenishment planners, store managers and the VP of Supply Chain.\n\nBusiness definitions (use these exactly):\n- \"Risk\" / \"stockout risk\" / \"alerts\" = rows in risk_recommendations. \"Alerts\" or \"exceptions\" means risk_tier IN ('Critical','High') unless the user says otherwise.\n- Risk score 0-100 = 100 x stockout probability x (0.6 + 0.4 x value weight). Tiers: Critical >= 70, High >= 45, Medium >= 25, Low < 25.\n- Replenishment window (lead_time_window_days) = p90 actual supplier lead time over the last 90 days + 1 review day. A stockout risk means demand over that window is likely to exceed on hand + inbound arriving inside it.\n- Revenue at risk = expected lost units x unit price, in USD. Always format as currency.\n- Days of cover = on hand / average forecast daily demand for the next 7 days. Excess inventory = more than 45 days of cover.\n- Stockout rate = share of store/SKU/days that ended with zero on hand (gold_daily_store_sku_sales.is_stockout). On-shelf availability = 1 - stockout rate.\n- Forecast error = WAPE = sum(|actual - forecast|) / sum(actual), on days without a stockout. Lower is better. The champion model is lgbm_pred; the baseline (seasonal naive, what planners use today) is baseline_pred.\n- Alert precision = share of Critical/High alerts in risk_backtest that actually stocked out within their window (actual_stockout_in_window). Recall = share of actual stockouts that were alerted. Compare with rule_of_thumb_alert (days of cover < contract lead time), which is today's process.\n- Suggested actions: EXPEDITE (chase a late supplier PO), TRANSFER (move stock from a store in the same region with spare cover; action_source_id is the donor store), REORDER (additional supplier order, case-pack rounded), MONITOR (no action). These are suggestions only; planners decide.\n- \"This week\" / \"right now\" / \"today\" refers to the latest as_of_date in risk_recommendations. Forecast dates are target_date in demand_forecast.\n\nGuidance:\n- Prefer the metric views (mv_*) for KPI questions and use MEASURE(<measure>) with GROUP BY on their dimensions.\n- When listing risky items, show store_name, sku_name, risk_tier, risk_score, revenue_at_risk, primary_driver, recommended_action, recommended_qty, ordered by risk_rank.\n- Round probabilities to percentages and money to whole dollars. Limit lists to 20 rows unless asked.\n- Never claim an order was placed; the system only recommends.\n"
+          "You answer questions for Harvest Lane Markets, a 50-store grocery chain (5 regions: Metro North, Metro South, Coastal, Valley, Lakeshore; 400 SKUs in 10 categories). Users are replenishment planners, store managers and the VP of Supply Chain.\n\nBusiness definitions (use these exactly):\n- \"Risk\" / \"stockout risk\" / \"alerts\" = rows in risk_recommendations. \"Alerts\" or \"exceptions\" means risk_tier IN ('Critical','High') unless the user says otherwise.\n- Risk score 0-100 = 100 x stockout probability x (0.6 + 0.4 x value weight). Tiers: Critical >= 70, High >= 45, Medium >= 25, Low < 25.\n- Replenishment window (lead_time_window_days) = p90 actual supplier lead time over the last 90 days + 1 review day. A stockout risk means demand over that window is likely to exceed on hand + inbound arriving inside it.\n- Revenue at risk = expected lost units x unit price, in USD. Always format as currency.\n- Days of cover = on hand / average forecast daily demand for the next 7 days. Excess inventory = more than 45 days of cover.\n- Stockout rate = share of store/SKU/days that ended with zero on hand (gold_daily_store_sku_sales.is_stockout). On-shelf availability = 1 - stockout rate.\n- Forecast error = WAPE = sum(|actual - forecast|) / sum(actual), on days without a stockout. Lower is better. The champion model is lgbm_pred; the baseline (seasonal naive, what planners use today) is baseline_pred.\n- Alert precision = share of Critical/High alerts in risk_backtest that actually stocked out within their window (actual_stockout_in_window). Recall = share of actual stockouts that were alerted. Compare with rule_of_thumb_alert (days of cover < contract lead time), which is today's process.\n- Suggested actions: EXPEDITE (chase a late supplier PO), TRANSFER (move stock from a store in the same region with spare cover; action_source_id is the donor store), REORDER (additional supplier order, case-pack rounded), MONITOR (no action). These are suggestions only; planners decide.\n- \"This week\" / \"right now\" / \"today\" refers to the latest as_of_date in risk_recommendations. Forecast dates are target_date in demand_forecast.\n\nGuidance:\n- Prefer the metric views (mv_*) for KPI questions and use MEASURE(<measure>) with GROUP BY on their dimensions.\n- When listing risky items, show store_name, sku_name, risk_tier, risk_score, revenue_at_risk, primary_driver, recommended_action, recommended_qty, ordered by risk_rank.\n- Round probabilities to percentages and money to whole dollars. Limit lists to 20 rows unless asked.\n- Never claim an order was placed; the system only recommends.\n\nExplaining a specific recommendation:\n- When a user asks why an item is at risk, what is driving a recommendation, or asks you to explain a recommendation for an item at a store, query risk_recommendations filtered with ILIKE on sku_name and store_name (users type partial names such as \"green beans\" and \"Stonebrook\").\n- Return planner_explanation (the two-sentence planner note), driver_details (the quantified drivers), primary_driver, recommended_action, recommended_qty, action_source_id, stockout_probability, on_hand_units, forecast_demand_window and lead_time_window_days. Use the planner_explanation text as the core of your answer and do not add causes that are not in driver_details.\n- explanation_is_llm = true means the note was written by the LLM and passed the quality checks in risk_explanation_eval; false means a deterministic template was used.\n- Questions about planner-note quality (faithfulness, judge scores, pass rate) use risk_explanation_eval.\n"
         ]
       }
     ],
@@ -154,6 +166,15 @@
         ]
       },
       {
+        "id": "86e6586c2804e11d6b4732b8a95f8499",
+        "question": [
+          "Explain the recommendation for green beans at Stonebrook"
+        ],
+        "sql": [
+          "SELECT store_name, sku_name, risk_tier, risk_score, ROUND(stockout_probability * 100) AS stockout_probability_pct, on_hand_units, forecast_demand_window, lead_time_window_days,\n       primary_driver, driver_details, recommended_action, recommended_qty, action_source_id, planner_explanation, explanation_is_llm\nFROM serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations\nWHERE sku_name ILIKE '%green beans%' AND store_name ILIKE '%stonebrook%'\nORDER BY risk_rank\nLIMIT 5"
+        ]
+      },
+      {
         "id": "99feb7395390781e569c1786fee75987",
         "question": [
           "Alerts and revenue at risk by region"
@@ -169,6 +190,15 @@
         ],
         "sql": [
           "SELECT category, ROUND(MEASURE(model_wape), 3) AS model_wape, ROUND(MEASURE(baseline_wape), 3) AS baseline_wape, ROUND(MEASURE(wape_improvement_pct), 1) AS improvement_pct\nFROM serverless_stable_3vku19_catalog.inventory_risk.mv_forecast_accuracy\nGROUP BY category\nORDER BY improvement_pct DESC"
+        ]
+      },
+      {
+        "id": "b5c6d20f59506e419ddca14174d43dea",
+        "question": [
+          "How good are the Gen AI planner notes?"
+        ],
+        "sql": [
+          "SELECT COUNT(*) AS notes_evaluated, ROUND(AVG(CASE WHEN final_pass THEN 1 ELSE 0 END) * 100, 1) AS pass_rate_pct,\n       ROUND(AVG(judge_faithfulness), 2) AS avg_faithfulness_1_to_5, ROUND(AVG(judge_actionability), 2) AS avg_actionability_1_to_5,\n       SUM(unsupported_number_count) AS unsupported_numbers\nFROM serverless_stable_3vku19_catalog.inventory_risk.risk_explanation_eval"
         ]
       },
       {

@@ -27,6 +27,7 @@ TABLES = {
     "gold_daily_store_sku_sales": "Two years of daily store/SKU sales, on hand and stockout flags.",
     "forecast_backtest": "Holdout forecasts vs actuals for the model (lgbm_pred) and baseline (baseline_pred).",
     "risk_backtest": "Risk scores computed 4 weeks ago with the actual outcome (actual_stockout_in_window) for alert-precision analysis.",
+    "risk_explanation_eval": "Quality evaluation of each Gen AI planner note: deterministic faithfulness checks plus LLM-judge scores (1-5) and the final pass/fail.",
     "mv_inventory_risk": "Metric view: alert counts, revenue at risk, cover and excess. Query with MEASURE().",
     "mv_forecast_accuracy": "Metric view: model vs baseline WAPE and bias. Query with MEASURE().",
     "mv_stockout_history": "Metric view: historical stockout rate. Query with MEASURE().",
@@ -42,6 +43,7 @@ questions = [
     "What is the forecast WAPE of the model vs the baseline by category?",
     "What was the alert precision of the radar compared with the rule of thumb?",
     "Which items are projected to stock out within 3 days in Metro North?",
+    "Explain the recommendation for green beans at Stonebrook",
 ]
 
 space = {

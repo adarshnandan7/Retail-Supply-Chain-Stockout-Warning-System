@@ -6,3 +6,7 @@ __pycache__/
 .env
 *.egg-info/
 node_modules/
+
+# Readout materials kept local only (deck PDF uploaded via the submission form; script for role-play prep)
+deck/
+script/

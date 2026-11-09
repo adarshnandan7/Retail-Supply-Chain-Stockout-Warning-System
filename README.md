@@ -40,8 +40,6 @@ Full job run `465476598725505`: 9 of 9 tasks succeeded, about 19 minutes on serv
 | **Databricks App** (business) | Streamlit planner UI: ranked queue, drill-down, decision capture, watchlist, action KPIs, "Ask Genie" | `src/app/`, `resources/app.yml` |
 | **AI/BI dashboard** | Ranked exceptions, revenue at risk, drivers, cover/excess, forecast accuracy, alert quality, supplier performance | `src/dashboards/`, `resources/dashboard.yml` |
 
-Readout materials: [`deck/Retail_Inventory_Risk_Radar_Readout.pdf`](deck/Retail_Inventory_Risk_Radar_Readout.pdf) (15 slides; source spec with speaker notes in `deck/deck_spec.json`) and the role-play script [`script/roleplay_script.md`](script/roleplay_script.md).
-
 Architecture and design decisions: [`docs/architecture.md`](docs/architecture.md). KPI definitions: [`docs/metric_definitions.md`](docs/metric_definitions.md).
 
 ## Execution evidence (text, committed)

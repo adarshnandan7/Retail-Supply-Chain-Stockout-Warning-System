@@ -1,7 +1,7 @@
 # Task `generate_raw_data` - SUCCESS
-- Task run id: `1063207499416537`
+- Task run id: `1125512045038137`
 - Notebook: `/Workspace/Users/adarsh.nandan@databricks.com/.bundle/retail_inventory_risk_radar/dev/files/src/datagen/generate_raw_data`
-- Duration: 226 s
+- Duration: 228 s
 
 ## Cell 1
 

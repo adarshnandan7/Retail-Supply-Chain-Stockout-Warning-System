@@ -1,0 +1,18 @@
+{
+  "checked_at": "2026-11-09T13:19:25.838553+00:00",
+  "as_of_date": "2026-11-06",
+  "window_origin": "2026-10-09",
+  "drift_threshold_pct": -1.0,
+  "max_model_age_days": 56,
+  "champion_version": 2,
+  "rows_scored": 534339,
+  "champion_current_wape": 0.4547,
+  "baseline_current_wape": 0.5291,
+  "champion_registered_wape": 0.4547,
+  "degradation_pct": -0.01,
+  "model_age_days": 0,
+  "retrain": true,
+  "reasons": [
+    "accuracy drift: WAPE 0.4547 is -0.0% worse than at registration (0.4547)"
+  ]
+}

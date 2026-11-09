@@ -1,7 +1,7 @@
 # Task `batch_forecast` - SUCCESS
-- Task run id: `598486591863471`
+- Task run id: `802445467347544`
 - Notebook: `/Workspace/Users/adarsh.nandan@databricks.com/.bundle/retail_inventory_risk_radar/dev/files/src/ml/batch_forecast`
-- Duration: 64 s
+- Duration: 71 s
 
 ## Cell 1
 

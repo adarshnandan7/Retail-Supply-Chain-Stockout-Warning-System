@@ -1,6 +1,6 @@
 # Table profiles across bronze / silver / gold / ML / serving
 
-_Captured 2026-11-07 14:12 UTC from workspace `https://fevm-serverless-stable-3vku19.cloud.databricks.com`._
+_Captured 2026-11-09 13:27 UTC from workspace `https://fevm-serverless-stable-3vku19.cloud.databricks.com`._
 
 ### Row counts by layer
 
@@ -46,7 +46,7 @@ UNION ALL SELECT 'planner_action_history' AS table_name, count(*) AS row_count F
 | risk_backtest | 19997 |
 | risk_explanations | 400 |
 | risk_recommendations | 19996 |
-| planner_action_history | 1 |
+| planner_action_history | 3 |
 
 ### Sample: gold_daily_store_sku_sales
 
@@ -90,29 +90,29 @@ SELECT * FROM serverless_stable_3vku19_catalog.inventory_risk.demand_forecast WH
 
 | forecast_origin | store_id | region | sku_id | category | target_date | horizon | on_promo | discount_pct | days_to_next_holiday | forecast_units | baseline_units | model_name | model_version | scored_at |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-07 | 1 | 0 | 0.0 | 19 | 52.252 | 48.667 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-07T14:03:28.866Z |
-| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-08 | 2 | 0 | 0.0 | 18 | 47.89 | 40.75 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-07T14:03:28.866Z |
-| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-09 | 3 | 0 | 0.0 | 17 | 39.541 | 64.25 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-07T14:03:28.866Z |
-| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-10 | 4 | 0 | 0.0 | 16 | 36.046 | 33.25 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-07T14:03:28.866Z |
-| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-11 | 5 | 0 | 0.0 | 15 | 37.186 | 38.75 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-07T14:03:28.866Z |
-| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-12 | 6 | 0 | 0.0 | 14 | 41.352 | 37.75 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-07T14:03:28.866Z |
-| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-13 | 7 | 0 | 0.0 | 13 | 46.447 | 60.0 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-07T14:03:28.866Z |
-| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-14 | 8 | 0 | 0.0 | 12 | 52.993 | 48.667 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-07T14:03:28.866Z |
-| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-15 | 9 | 0 | 0.0 | 11 | 47.861 | 40.75 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-07T14:03:28.866Z |
-| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-16 | 10 | 0 | 0.0 | 10 | 39.778 | 64.25 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-07T14:03:28.866Z |
+| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-07 | 1 | 0 | 0.0 | 19 | 52.252 | 48.667 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-09T13:25:49.537Z |
+| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-08 | 2 | 0 | 0.0 | 18 | 47.89 | 40.75 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-09T13:25:49.537Z |
+| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-09 | 3 | 0 | 0.0 | 17 | 39.541 | 64.25 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-09T13:25:49.537Z |
+| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-10 | 4 | 0 | 0.0 | 16 | 36.046 | 33.25 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-09T13:25:49.537Z |
+| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-11 | 5 | 0 | 0.0 | 15 | 37.186 | 38.75 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-09T13:25:49.537Z |
+| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-12 | 6 | 0 | 0.0 | 14 | 41.352 | 37.75 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-09T13:25:49.537Z |
+| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-13 | 7 | 0 | 0.0 | 13 | 46.447 | 60.0 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-09T13:25:49.537Z |
+| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-14 | 8 | 0 | 0.0 | 12 | 52.993 | 48.667 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-09T13:25:49.537Z |
+| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-15 | 9 | 0 | 0.0 | 11 | 47.861 | 40.75 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-09T13:25:49.537Z |
+| 2026-11-06 | S001 | Metro North | P00043 | Fresh Produce | 2026-11-16 | 10 | 0 | 0.0 | 10 | 39.778 | 64.25 | serverless_stable_3vku19_catalog.inventory_risk.demand_forecast | 2 | 2026-11-09T13:25:49.537Z |
 
 ### Unity Catalog tags on published objects
 
 ```sql
 SELECT table_name, collect_list(concat(tag_name, '=', tag_value)) AS tags
-FROM serverless_stable_3vku19_catalog.information_schema.table_tags WHERE schema_name = 'inventory_risk' AND table_name IN ('risk_recommendations','v_planner_risk_queue','mv_inventory_risk','gold_daily_store_sku_sales','demand_forecast')
+FROM serverless_stable_3vku19_catalog.information_schema.table_tags WHERE schema_name = 'inventory_risk' AND table_name IN ('risk_recommendations','planner_risk_queue','mv_inventory_risk','gold_daily_store_sku_sales','demand_forecast')
 GROUP BY table_name ORDER BY table_name
 ```
 
 | table_name | tags |
 |---|---|
-| demand_forecast | ["product_stage=ml","solution=inventory_risk_radar","sensitivity=internal","contains_pii=false","domain=supply_chain","owning_team=replenishment_planning","layer=gold"] |
-| gold_daily_store_sku_sales | ["layer=gold","sensitivity=internal","domain=supply_chain","contains_pii=false","solution=inventory_risk_radar","owning_team=replenishment_planning","product_stage=gold"] |
-| mv_inventory_risk | ["product_stage=semantic","layer=gold","domain=supply_chain","solution=inventory_risk_radar"] |
-| risk_recommendations | ["contains_pii=false","product_stage=serving","solution=inventory_risk_radar","sensitivity=internal","domain=supply_chain","owning_team=replenishment_planning","layer=gold"] |
-| v_planner_risk_queue | ["domain=supply_chain","governance=row_filter_and_mask","solution=inventory_risk_radar","layer=gold"] |
+| demand_forecast | ["owning_team=replenishment_planning","product_stage=ml","contains_pii=false","sensitivity=internal","domain=supply_chain","layer=gold","solution=inventory_risk_radar"] |
+| gold_daily_store_sku_sales | ["owning_team=replenishment_planning","product_stage=gold","solution=inventory_risk_radar","contains_pii=false","layer=gold","sensitivity=internal","domain=supply_chain"] |
+| mv_inventory_risk | ["domain=supply_chain","layer=gold","product_stage=semantic","solution=inventory_risk_radar"] |
+| planner_risk_queue | ["solution=inventory_risk_radar","domain=supply_chain","layer=gold","governance=row_filter_and_mask"] |
+| risk_recommendations | ["product_stage=serving","contains_pii=false","sensitivity=internal","domain=supply_chain","owning_team=replenishment_planning","layer=gold","solution=inventory_risk_radar"] |

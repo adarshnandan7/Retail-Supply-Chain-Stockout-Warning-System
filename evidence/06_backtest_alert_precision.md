@@ -1,6 +1,6 @@
 # Backtest: would the radar have warned planners 4 weeks ago?
 
-_Captured 2026-11-07 14:12 UTC from workspace `https://fevm-serverless-stable-3vku19.cloud.databricks.com`._
+_Captured 2026-11-09 13:27 UTC from workspace `https://fevm-serverless-stable-3vku19.cloud.databricks.com`._
 
 Risk scored as of **2026-10-09** using only information available that day, then compared with what actually happened (end-of-day on hand = 0 within the item's replenishment window). Items already out of stock at the origin are excluded (630); 19,367 store/SKUs evaluated, 1,909 actually stocked out.
 

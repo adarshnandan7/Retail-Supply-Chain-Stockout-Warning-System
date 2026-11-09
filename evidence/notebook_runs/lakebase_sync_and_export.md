@@ -1,7 +1,7 @@
 # Task `lakebase_sync_and_export` - SUCCESS
-- Task run id: `531750778966372`
+- Task run id: `338308863743829`
 - Notebook: `/Workspace/Users/adarsh.nandan@databricks.com/.bundle/retail_inventory_risk_radar/dev/files/src/lakebase/refresh_and_export`
-- Duration: 129 s
+- Duration: 87 s
 
 ## Cell 1
 
@@ -73,7 +73,7 @@ assert u.state.value == "COMPLETED", "synced table refresh failed"
 
 ```text
 synced table: synced_tables/serverless_stable_3vku19_catalog.inventory_risk.risk_recommendations_online | pipeline: 5cbc13ff-b5aa-4181-9ae7-01fa8725a851
-sync update 13ce7cfb-a31e-44d6-8eb5-d1e77d921499: COMPLETED in 46s
+sync update 424cc696-e225-4aec-a187-f1a08cdf5c3a: COMPLETED in 46s
 ```
 
 ## Cell 5
@@ -116,7 +116,7 @@ risk_tier  rows
      High  1530
    Medium   826
  Critical   808
-point query latency ms: 8.9
+point query latency ms: 10.0
  risk_rank                         store_name                         sku_name  risk_score recommended_action
          9 Harvest Lane Fairhaven Standard II Green Valley Oat Milk Value Pack         100           EXPEDITE
         14     Harvest Lane Kingsley Standard          Crestline Cheddar Block         100           EXPEDITE
@@ -157,7 +157,8 @@ if has_app:
           SELECT count(*) AS decisions, count_if(is_override) AS overrides, round(avg(CASE WHEN is_override THEN 1 ELSE 0 END), 3) AS override_rate,
                  count(DISTINCT planner) AS planners,
                  round(percentile_approx((unix_timestamp(a.created_at) - unix_timestamp(r.scored_at)) / 3600.0, 0.5), 2) AS median_hours_to_action
-          FROM {FQ}.planner_action_history a JOIN {FQ}.risk_recommendations r USING (recommendation_id)""").toPandas()
+          FROM {FQ}.planner_action_history a JOIN {FQ}.risk_recommendations r
+            ON a.recommendation_id = r.recommendation_id AND a.as_of_date = r.as_of_date AND a.created_at >= r.scored_at""").toPandas()
         checks["planner_kpis_from_delta"] = kpi
         print(kpi.to_string(index=False))
 print("exported:", exported)
@@ -168,8 +169,8 @@ conn.close()
 
 ```text
 decisions  overrides  override_rate  planners median_hours_to_action
-         1          0            0.0         1                  -0.26
-exported: {'planner_action_history': 1, 'planner_note_history': 1, 'planner_watchlists': 1}
+         0          0            NaN         0                   None
+exported: {'planner_action_history': 3, 'planner_note_history': 3, 'planner_watchlists': 1}
 ```
 
 ## Cell 8

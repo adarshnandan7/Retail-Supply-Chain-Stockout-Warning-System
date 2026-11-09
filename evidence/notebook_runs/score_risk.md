@@ -1,7 +1,7 @@
 # Task `score_risk` - SUCCESS
-- Task run id: `842884710569891`
+- Task run id: `1014406213266521`
 - Notebook: `/Workspace/Users/adarsh.nandan@databricks.com/.bundle/retail_inventory_risk_radar/dev/files/src/risk/score_risk`
-- Duration: 40 s
+- Duration: 54 s
 
 ## Cell 1
 
@@ -196,7 +196,7 @@ print(json.dumps(bt_summary, indent=2))
 **Output**
 
 ```text
-/home/spark-1a34c61d-1a78-4178-9814-16/.ipykernel/68/command-7528556477565107-1828153330:9: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+/home/spark-c980c45a-e145-4b29-9e2c-9e/.ipykernel/68/command-7528556477565107-1828153330:9: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
   risk_b = risk_b.merge(act.reset_index(), on=["store_id", "sku_id"], how="left").fillna({"actual_stockout_in_window": False})
 
 {

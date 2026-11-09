@@ -1,7 +1,7 @@
 # Task `metric_views` - SUCCESS
-- Task run id: `829500589129562`
+- Task run id: `475118626531516`
 - Notebook: `/Workspace/Users/adarsh.nandan@databricks.com/.bundle/retail_inventory_risk_radar/dev/files/src/metrics/create_metric_views`
-- Duration: 26 s
+- Duration: 14 s
 
 ## Cell 1
 

@@ -134,10 +134,6 @@
     },
     {
       "ok": true,
-      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.v_planner_risk_queue SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal"
-    },
-    {
-      "ok": true,
       "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.bronze_suppliers SET TAGS ('domain' = 'supply_chain', 'layer' = 'bronze', 'sensitivity' = "
     },
     {
@@ -146,15 +142,19 @@
     },
     {
       "ok": true,
-      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.mv_inventory_risk SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal', "
-    },
-    {
-      "ok": true,
       "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.risk_backtest SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal', 'co"
     },
     {
       "ok": true,
       "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.gold_inbound_po_pipeline SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensiti"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.risk_explanation_eval SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'intern"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.mv_inventory_risk SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal', "
     },
     {
       "ok": true,
@@ -170,19 +170,27 @@
     },
     {
       "ok": true,
-      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.mv_forecast_accuracy SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal"
-    },
-    {
-      "ok": true,
-      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.mv_alert_backtest SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal', "
-    },
-    {
-      "ok": true,
       "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.silver_inventory_snapshots SET TAGS ('domain' = 'supply_chain', 'layer' = 'silver', 'sensi"
     },
     {
       "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.planner_risk_queue SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal'"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.mv_forecast_accuracy SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal"
+    },
+    {
+      "ok": true,
       "sql": "ALTER MATERIALIZED VIEW serverless_stable_3vku19_catalog.inventory_risk.gold_supplier_lead_time_stats SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'se"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.planner_region_access SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'intern"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.model_monitoring SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal', "
     },
     {
       "ok": true,
@@ -195,6 +203,14 @@
     {
       "ok": true,
       "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.forecast_backtest SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal',"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.planner_watchlists SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal'"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.planner_note_history SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'interna"
     },
     {
       "ok": true,
@@ -218,11 +234,11 @@
     },
     {
       "ok": true,
-      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.mv_stockout_history SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal'"
+      "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.bronze_products SET TAGS ('domain' = 'supply_chain', 'layer' = 'bronze', 'sensitivity' = '"
     },
     {
       "ok": true,
-      "sql": "ALTER STREAMING TABLE serverless_stable_3vku19_catalog.inventory_risk.bronze_products SET TAGS ('domain' = 'supply_chain', 'layer' = 'bronze', 'sensitivity' = '"
+      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.mv_alert_backtest SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal', "
     },
     {
       "ok": true,
@@ -238,19 +254,55 @@
     },
     {
       "ok": true,
-      "sql": "CREATE OR REPLACE FUNCTION serverless_stable_3vku19_catalog.inventory_risk.can_see_region(region STRING) RETURNS BOOLEAN COMMENT 'Row filter: admins and chain-w"
+      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.mv_stockout_history SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'internal'"
     },
     {
       "ok": true,
-      "sql": "CREATE OR REPLACE FUNCTION serverless_stable_3vku19_catalog.inventory_risk.can_see_financials() RETURNS BOOLEAN COMMENT 'Column mask helper: revenue exposure is"
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.planner_action_history SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'sensitivity' = 'inter"
     },
     {
       "ok": true,
-      "sql": "CREATE OR REPLACE VIEW serverless_stable_3vku19_catalog.inventory_risk.v_planner_risk_queue COMMENT 'Governed planner risk queue: region-filtered rows, revenue "
+      "sql": "CREATE TABLE IF NOT EXISTS serverless_stable_3vku19_catalog.inventory_risk.planner_region_access ( principal STRING NOT NULL COMMENT 'User email or service prin"
     },
     {
       "ok": true,
-      "sql": "ALTER VIEW serverless_stable_3vku19_catalog.inventory_risk.v_planner_risk_queue SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'governance' = 'row_filte"
+      "sql": "CREATE OR REPLACE FUNCTION serverless_stable_3vku19_catalog.inventory_risk.region_row_filter(row_region STRING) RETURNS BOOLEAN COMMENT 'Row filter for planner_"
+    },
+    {
+      "ok": true,
+      "sql": "CREATE OR REPLACE FUNCTION serverless_stable_3vku19_catalog.inventory_risk.mask_revenue(revenue_at_risk DOUBLE) RETURNS DOUBLE COMMENT 'Column mask: revenue at "
+    },
+    {
+      "ok": true,
+      "sql": "DROP TABLE IF EXISTS serverless_stable_3vku19_catalog.inventory_risk.planner_risk_queue"
+    },
+    {
+      "ok": true,
+      "sql": "CREATE TABLE serverless_stable_3vku19_catalog.inventory_risk.planner_risk_queue COMMENT 'Planner-facing risk queue with an enforced Unity Catalog row filter (re"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.planner_risk_queue SET ROW FILTER serverless_stable_3vku19_catalog.inventory_risk.region_row_filter "
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.planner_risk_queue ALTER COLUMN revenue_at_risk SET MASK serverless_stable_3vku19_catalog.inventory_"
+    },
+    {
+      "ok": true,
+      "sql": "ALTER TABLE serverless_stable_3vku19_catalog.inventory_risk.planner_risk_queue SET TAGS ('domain' = 'supply_chain', 'layer' = 'gold', 'governance' = 'row_filter"
+    },
+    {
+      "ok": true,
+      "sql": "DROP VIEW IF EXISTS serverless_stable_3vku19_catalog.inventory_risk.v_planner_risk_queue"
+    },
+    {
+      "ok": true,
+      "sql": "DROP FUNCTION IF EXISTS serverless_stable_3vku19_catalog.inventory_risk.can_see_region"
+    },
+    {
+      "ok": true,
+      "sql": "DROP FUNCTION IF EXISTS serverless_stable_3vku19_catalog.inventory_risk.can_see_financials"
     },
     {
       "ok": true,
@@ -258,15 +310,7 @@
     },
     {
       "ok": true,
-      "sql": "GRANT SELECT ON VIEW serverless_stable_3vku19_catalog.inventory_risk.v_planner_risk_queue TO `account users`"
-    },
-    {
-      "ok": true,
-      "sql": "GRANT EXECUTE ON FUNCTION serverless_stable_3vku19_catalog.inventory_risk.can_see_region TO `account users`"
-    },
-    {
-      "ok": true,
-      "sql": "GRANT EXECUTE ON FUNCTION serverless_stable_3vku19_catalog.inventory_risk.can_see_financials TO `account users`"
+      "sql": "GRANT SELECT ON TABLE serverless_stable_3vku19_catalog.inventory_risk.planner_risk_queue TO `account users`"
     },
     {
       "ok": true,
@@ -443,6 +487,16 @@
       "tag_value": "gold"
     },
     {
+      "table_name": "model_monitoring",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "model_monitoring",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
       "table_name": "mv_alert_backtest",
       "tag_name": "layer",
       "tag_value": "gold"
@@ -483,12 +537,67 @@
       "tag_value": "serving"
     },
     {
+      "table_name": "planner_action_history",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "planner_action_history",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
+      "table_name": "planner_note_history",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "planner_note_history",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
+      "table_name": "planner_region_access",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "planner_region_access",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
+      "table_name": "planner_risk_queue",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "planner_watchlists",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "planner_watchlists",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
       "table_name": "risk_backtest",
       "tag_name": "layer",
       "tag_value": "gold"
     },
     {
       "table_name": "risk_backtest",
+      "tag_name": "product_stage",
+      "tag_value": "serving"
+    },
+    {
+      "table_name": "risk_explanation_eval",
+      "tag_name": "layer",
+      "tag_value": "gold"
+    },
+    {
+      "table_name": "risk_explanation_eval",
       "tag_name": "product_stage",
       "tag_value": "serving"
     },
@@ -611,17 +720,100 @@
       "table_name": "silver_suppliers",
       "tag_name": "product_stage",
       "tag_value": "silver"
-    },
-    {
-      "table_name": "v_planner_risk_queue",
-      "tag_name": "layer",
-      "tag_value": "gold"
     }
   ],
-  "view_check_as_admin": [
+  "queue_check_as_job_identity": [
     {
       "visible_rows": 19996,
       "rows_with_revenue_visible": 19996
     }
-  ]
+  ],
+  "enforcement_test": {
+    "principal": "adarsh.nandan@databricks.com",
+    "before_mapping": [
+      {
+        "region": "Coastal",
+        "rows_visible": 3998,
+        "revenue_values_visible": 3998
+      },
+      {
+        "region": "Lakeshore",
+        "rows_visible": 3999,
+        "revenue_values_visible": 3999
+      },
+      {
+        "region": "Metro North",
+        "rows_visible": 3999,
+        "revenue_values_visible": 3999
+      },
+      {
+        "region": "Metro South",
+        "rows_visible": 4000,
+        "revenue_values_visible": 4000
+      },
+      {
+        "region": "Valley",
+        "rows_visible": 4000,
+        "revenue_values_visible": 4000
+      }
+    ],
+    "mapped_to_valley_no_financials": [
+      {
+        "region": "Valley",
+        "rows_visible": 4000,
+        "revenue_values_visible": 0
+      }
+    ],
+    "after_mapping_removed": [
+      {
+        "region": "Coastal",
+        "rows_visible": 3998,
+        "revenue_values_visible": 3998
+      },
+      {
+        "region": "Lakeshore",
+        "rows_visible": 3999,
+        "revenue_values_visible": 3999
+      },
+      {
+        "region": "Metro North",
+        "rows_visible": 3999,
+        "revenue_values_visible": 3999
+      },
+      {
+        "region": "Metro South",
+        "rows_visible": 4000,
+        "revenue_values_visible": 4000
+      },
+      {
+        "region": "Valley",
+        "rows_visible": 4000,
+        "revenue_values_visible": 4000
+      }
+    ],
+    "row_filter_enforced": true,
+    "mask_enforced": true,
+    "describe_row_filter_and_mask": [
+      {
+        "col_name": "revenue_at_risk",
+        "data_type": "double",
+        "comment": null
+      },
+      {
+        "col_name": "Row Filter",
+        "data_type": "`serverless_stable_3vku19_catalog`.`inventory_risk`.`region_row_filter` ON (region)",
+        "comment": ""
+      },
+      {
+        "col_name": "# Column Masks",
+        "data_type": "",
+        "comment": ""
+      },
+      {
+        "col_name": "revenue_at_risk",
+        "data_type": "`serverless_stable_3vku19_catalog`.`inventory_risk`.`mask_revenue`",
+        "comment": ""
+      }
+    ]
+  }
 }

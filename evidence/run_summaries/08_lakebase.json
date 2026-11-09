@@ -3,8 +3,8 @@
   "pipeline_id": "5cbc13ff-b5aa-4181-9ae7-01fa8725a851",
   "sync_state": "COMPLETED",
   "exported_to_delta": {
-    "planner_action_history": 1,
-    "planner_note_history": 1,
+    "planner_action_history": 3,
+    "planner_note_history": 3,
     "planner_watchlists": 1
   },
   "synced_rows_by_tier": [
@@ -25,7 +25,7 @@
       "rows": 808
     }
   ],
-  "point_query_ms": 8.9,
+  "point_query_ms": 10.0,
   "top_metro_north": [
     {
       "risk_rank": 9,
@@ -100,11 +100,11 @@
   ],
   "planner_kpis_from_delta": [
     {
-      "decisions": 1,
+      "decisions": 0,
       "overrides": 0,
-      "override_rate": 0.0,
-      "planners": 1,
-      "median_hours_to_action": "-0.26"
+      "override_rate": NaN,
+      "planners": 0,
+      "median_hours_to_action": null
     }
   ]
 }

@@ -1,7 +1,7 @@
 # Task `train_forecast` - SUCCESS
-- Task run id: `745938303385983`
+- Task run id: `610385030731505`
 - Notebook: `/Workspace/Users/adarsh.nandan@databricks.com/.bundle/retail_inventory_risk_radar/dev/files/src/ml/train_forecast`
-- Duration: 275 s
+- Duration: 253 s
 
 ## Cell 1
 
@@ -201,33 +201,34 @@ print(imp.head(10).to_string(index=False))
 **Output**
 
 ```text
-[100]	val's tweedie: 25.9449
-[200]	val's tweedie: 25.9441
+[100]	val's tweedie: 25.9444
+[200]	val's tweedie: 25.9439
+[300]	val's tweedie: 25.9439
 
-/local_disk0/.ephemeral_nfs/envs/pythonEnv-841e8e37-f4f9-48e2-a830-d9e584907fd4/lib/python3.12/site-packages/mlflow/types/utils.py:440: UserWarning: Hint: Inferred schema contains integer column(s). Integer columns in Python cannot represent missing values. If your input data contains missing values at inference time, it will be encoded as floats and will cause a schema enforcement error. The best way to avoid this problem is to infer the model schema based on a realistic data sample (training dataset) that includes missing values. Alternatively, you can declare integer columns as doubles (float64) whenever these columns may have missing values. See `Handling Integers With Missing Values <https://www.mlflow.org/docs/latest/models.html#handling-integers-with-missing-values>`_ for more details.
+/local_disk0/.ephemeral_nfs/envs/pythonEnv-a8e778e4-872d-4af4-b992-15ecc354b081/lib/python3.12/site-packages/mlflow/types/utils.py:440: UserWarning: Hint: Inferred schema contains integer column(s). Integer columns in Python cannot represent missing values. If your input data contains missing values at inference time, it will be encoded as floats and will cause a schema enforcement error. The best way to avoid this problem is to infer the model schema based on a realistic data sample (training dataset) that includes missing values. Alternatively, you can declare integer columns as doubles (float64) whenever these columns may have missing values. See `Handling Integers With Missing Values <https://www.mlflow.org/docs/latest/models.html#handling-integers-with-missing-values>`_ for more details.
   warnings.warn(
-2026/11/07 14:01:48 WARNING mlflow.models.model: `artifact_path` is deprecated. Please use `name` instead.
-🔗 View Logged Model at: https://fevm-serverless-stable-3vku19.cloud.databricks.com/ml/experiments/1061037449516920/models/m-1cecc67d589947c291f7f80bbd6f2d7f?o=7474656932908638
+2026/11/09 13:24:06 WARNING mlflow.models.model: `artifact_path` is deprecated. Please use `name` instead.
+🔗 View Logged Model at: https://fevm-serverless-stable-3vku19.cloud.databricks.com/ml/experiments/1061037449516920/models/m-48cb10039d344e42881bebd574d67a15?o=7474656932908638
 
 {
-  "holdout_wape": 0.4547,
-  "holdout_bias": 0.0155,
-  "holdout_mae": 2.7959,
-  "holdout_wape_promo_days": 0.4011,
-  "holdout_wape_non_promo_days": 0.4583,
-  "best_iteration": 210.0
+  "holdout_wape": 0.4548,
+  "holdout_bias": 0.0161,
+  "holdout_mae": 2.7969,
+  "holdout_wape_promo_days": 0.4012,
+  "holdout_wape_non_promo_days": 0.4585,
+  "best_iteration": 250.0
 }
              feature         gain
-                 r28 4.380068e+07
-                  r7 2.118398e+06
-        discount_pct 1.528948e+06
-          target_dow 8.919010e+05
-             sn4_dow 5.975240e+05
-             r28_std 3.432080e+05
-days_to_next_holiday 2.735622e+05
-       category_code 1.839477e+05
-   next_holiday_code 1.601812e+05
-            on_promo 8.576826e+04
+                 r28 4.381372e+07
+                  r7 2.094676e+06
+        discount_pct 1.527596e+06
+          target_dow 8.968613e+05
+             sn4_dow 6.699489e+05
+             r28_std 3.360440e+05
+days_to_next_holiday 2.763932e+05
+       category_code 1.874301e+05
+   next_holiday_code 1.586166e+05
+       hol_ratio_sku 8.996982e+04
 ```
 
 ## Cell 11
@@ -250,7 +251,16 @@ by_cat["wape_reduction_pct"] = ((by_cat.baseline_wape - by_cat.lgbm_wape) / by_c
 print(by_cat.to_string(index=False))
 
 client = MlflowClient()
-winner = "lightgbm" if m_l["holdout_wape"] < m_b["holdout_wape"] else "baseline"
+# Champion/challenger: the new model must beat the seasonal-naive baseline AND be at least as good as the current
+# champion's WAPE on the latest window (measured by the drift_check task that triggered this retrain).
+try:
+    current_champion_wape = float(dbutils.jobs.taskValues.get(taskKey="drift_check", key="champion_current_wape", default="", debugValue="") or "inf")
+except Exception:
+    current_champion_wape = float("inf")
+beats_baseline = m_l["holdout_wape"] < m_b["holdout_wape"]
+beats_champion = m_l["holdout_wape"] <= current_champion_wape
+winner = "lightgbm" if (beats_baseline and beats_champion) else ("baseline" if not beats_baseline else "current_champion")
+print(f"beats baseline={beats_baseline}, beats current champion ({current_champion_wape})={beats_champion} -> {winner}")
 registered = None
 if winner == "lightgbm":
     mv = mlflow.register_model(f"runs:/{lgbm_run_id}/model", MODEL_NAME)
@@ -260,6 +270,7 @@ if winner == "lightgbm":
         f"seasonal-naive {m_b['holdout_wape']:.3f} (origin {holdout_origin})."))
     client.set_model_version_tag(MODEL_NAME, mv.version, "holdout_wape", f"{m_l['holdout_wape']:.4f}")
     client.set_model_version_tag(MODEL_NAME, mv.version, "baseline_wape", f"{m_b['holdout_wape']:.4f}")
+    client.set_model_version_tag(MODEL_NAME, mv.version, "holdout_origin", str(holdout_origin))
     registered = int(mv.version)
 print(f"winner={winner} registered={MODEL_NAME} v{registered} alias=@champion")
 ```
@@ -268,28 +279,21 @@ print(f"winner={winner} registered={MODEL_NAME} v{registered} alias=@champion")
 
 ```text
 model                           run_id  holdout_wape  holdout_bias  holdout_mae  holdout_wape_promo_days  holdout_wape_non_promo_days
-   seasonal_naive (baseline) 180788f3dbce49efb830faec6ec85dad        0.5291        0.0576       3.2539                   0.5487                       0.5278
-lightgbm_global (challenger) 218d0ae089fa4f7faf61c866135e1ba0        0.4547        0.0155       2.7959                   0.4011                       0.4583
+   seasonal_naive (baseline) 40608202e50c465c8dda082f4fd70e4e        0.5291        0.0576       3.2539                   0.5487                       0.5278
+lightgbm_global (challenger) c48c1a77a54a487fa5997fec169de17c        0.4548        0.0161       2.7969                   0.4012                       0.4585
        category  baseline_wape  baseline_bias  lgbm_wape  lgbm_bias  wape_reduction_pct
-         Bakery         0.4903        -0.0233     0.4263    -0.0401                13.1
-      Beverages         0.5754         0.2092     0.4610     0.1030                19.9
-   Dairy & Eggs         0.4908         0.0089     0.4314    -0.0087                12.1
-  Fresh Produce         0.4784         0.0738     0.4105     0.0265                14.2
-         Frozen         0.5523         0.0853     0.4810     0.0372                12.9
-      Household         0.6911        -0.0042     0.6212    -0.0118                10.1
- Meat & Seafood         0.5840         0.0920     0.4942     0.0317                15.4
-Pantry & Baking         0.5657        -0.0024     0.4970    -0.0391                12.1
-  Personal Care         0.7953        -0.0252     0.7288    -0.0223                 8.4
-         Snacks         0.5363         0.0296     0.4578     0.0123                14.6
-
-Registered model 'serverless_stable_3vku19_catalog.inventory_risk.demand_forecast' already exists. Creating a new version of this model...
-2026/11/07 14:01:57 WARNING mlflow.tracking._model_registry.fluent: Run with id 218d0ae089fa4f7faf61c866135e1ba0 has no artifacts at artifact path 'model', registering model based on models:/m-1cecc67d589947c291f7f80bbd6f2d7f instead
-
-
-
-🔗 Created version '2' of model 'serverless_stable_3vku19_catalog.inventory_risk.demand_forecast': https://fevm-serverless-stable-3vku19.cloud.databricks.com/explore/data/models/serverless_stable_3vku19_catalog/inventory_risk/demand_forecast/version/2?o=7474656932908638
-
-winner=lightgbm registered=serverless_stable_3vku19_catalog.inventory_risk.demand_forecast v2 alias=@champion
+         Bakery         0.4903        -0.0233     0.4261    -0.0387                13.1
+      Beverages         0.5754         0.2092     0.4622     0.1076                19.7
+   Dairy & Eggs         0.4908         0.0089     0.4314    -0.0088                12.1
+  Fresh Produce         0.4784         0.0738     0.4109     0.0277                14.1
+         Frozen         0.5523         0.0853     0.4800     0.0316                13.1
+      Household         0.6911        -0.0042     0.6210    -0.0127                10.1
+ Meat & Seafood         0.5840         0.0920     0.4946     0.0316                15.3
+Pantry & Baking         0.5657        -0.0024     0.4972    -0.0386                12.1
+  Personal Care         0.7953        -0.0252     0.7283    -0.0243                 8.4
+         Snacks         0.5363         0.0296     0.4579     0.0123                14.6
+beats baseline=True, beats current champion (0.4547)=False -> current_champion
+winner=current_champion registered=serverless_stable_3vku19_catalog.inventory_risk.demand_forecast vNone alias=@champion
 ```
 
 ## Cell 13
@@ -313,7 +317,8 @@ spark.sql(f"COMMENT ON TABLE {FQ}.forecast_backtest IS 'Holdout (backtest) forec
 summary = {"holdout_origin": str(holdout_origin), "train_rows": len(train), "holdout_rows_scored": len(hold_eval),
            "baseline": {k: round(v, 4) for k, v in m_b.items()}, "lightgbm": {k: round(float(v), 4) for k, v in m_l.items()},
            "wape_reduction_pct": round((m_b["holdout_wape"] - m_l["holdout_wape"]) / m_b["holdout_wape"] * 100, 1),
-           "winner": winner, "registered_model": MODEL_NAME, "registered_version": registered,
+           "winner": winner, "current_champion_wape_before": current_champion_wape if current_champion_wape != float("inf") else None,
+           "registered_model": MODEL_NAME, "registered_version": registered,
            "mlflow_runs": {"baseline": baseline_run_id, "lightgbm": lgbm_run_id}, "experiment": EXPERIMENT,
            "by_category": by_cat.to_dict(orient="records"), "top_features": imp.head(10).to_dict(orient="records")}
 with open(f"{EVIDENCE}/04_model_comparison.json", "w") as fh:
@@ -336,20 +341,21 @@ print(json.dumps(summary, indent=2, default=str))
     "holdout_wape_non_promo_days": 0.5278
   },
   "lightgbm": {
-    "holdout_wape": 0.4547,
-    "holdout_bias": 0.0155,
-    "holdout_mae": 2.7959,
-    "holdout_wape_promo_days": 0.4011,
-    "holdout_wape_non_promo_days": 0.4583,
-    "best_iteration": 210.0
+    "holdout_wape": 0.4548,
+    "holdout_bias": 0.0161,
+    "holdout_mae": 2.7969,
+    "holdout_wape_promo_days": 0.4012,
+    "holdout_wape_non_promo_days": 0.4585,
+    "best_iteration": 250.0
   },
-  "wape_reduction_pct": 14.1,
-  "winner": "lightgbm",
+  "wape_reduction_pct": 14.0,
+  "winner": "current_champion",
+  "current_champion_wape_before": 0.4547,
   "registered_model": "serverless_stable_3vku19_catalog.inventory_risk.demand_forecast",
-  "registered_version": 2,
+  "registered_version": null,
   "mlflow_runs": {
-    "baseline": "180788f3dbce49efb830faec6ec85dad",
-    "lightgbm": "218d0ae089fa4f7faf61c866135e1ba0"
+    "baseline": "40608202e50c465c8dda082f4fd70e4e",
+    "lightgbm": "c48c1a77a54a487fa5997fec169de17c"
   },
   "experiment": "/Users/adarsh.nandan@databricks.com/inventory-risk-radar-demand-forecast",
   "by_category": [
@@ -357,79 +363,79 @@ print(json.dumps(summary, indent=2, default=str))
       "category": "Bakery",
       "baseline_wape": 0.4903,
       "baseline_bias": -0.0233,
-      "lgbm_wape": 0.4263,
-      "lgbm_bias": -0.0401,
+      "lgbm_wape": 0.4261,
+      "lgbm_bias": -0.0387,
       "wape_reduction_pct": 13.1
     },
     {
       "category": "Beverages",
       "baseline_wape": 0.5754,
       "baseline_bias": 0.2092,
-      "lgbm_wape": 0.461,
-      "lgbm_bias": 0.103,
-      "wape_reduction_pct": 19.9
+      "lgbm_wape": 0.4622,
+      "lgbm_bias": 0.1076,
+      "wape_reduction_pct": 19.7
     },
     {
       "category": "Dairy & Eggs",
       "baseline_wape": 0.4908,
       "baseline_bias": 0.0089,
       "lgbm_wape": 0.4314,
-      "lgbm_bias": -0.0087,
+      "lgbm_bias": -0.0088,
       "wape_reduction_pct": 12.1
     },
     {
       "category": "Fresh Produce",
       "baseline_wape": 0.4784,
       "baseline_bias": 0.0738,
-      "lgbm_wape": 0.4105,
-      "lgbm_bias": 0.0265,
-      "wape_reduction_pct": 14.2
+      "lgbm_wape": 0.4109,
+      "lgbm_bias": 0.0277,
+      "wape_reduction_pct": 14.1
     },
     {
       "category": "Frozen",
       "baseline_wape": 0.5523,
       "baseline_bias": 0.0853,
-      "lgbm_wape": 0.481,
-      "lgbm_bias": 0.0372,
-      "wape_reduction_pct": 12.9
+      "lgbm_wape": 0.48,
+      "lgbm_bias": 0.0316,
+      "wape_reduction_pct": 13.1
     },
     {
       "category": "Household",
       "baseline_wape": 0.6911,
       "baseline_bias": -0.0042,
-      "lgbm_wape": 0.6212,
-      "lgbm_bias": -0.0118,
+      "lgbm_wape": 0.621,
+      "lgbm_bias": -0.0127,
       "wape_reduction_pct": 10.1
     },
     {
       "category": "Meat & Seafood",
       "baseline_wape": 0.584,
       "baseline_bias": 0.092,
-      "lgbm_wape": 0.4942,
-      "lgbm_bias": 0.0317,
-      "wape_reduction_pct": 15.4
+      "lgbm_wape": 0.4946,
+      "lgbm_bias": 0.0316,
+      "wape_reduction_pct": 15.3
     },
     {
       "category": "Pantry & Baking",
       "baseline_wape": 0.5657,
       "baseline_bias": -0.0024,
-      "lgbm_wape": 0.497,
-      "lgbm_bias": -0.0391,
+      "lgbm_wape": 0.4972,
+      "lgbm_bias": -0.0386,
       "wape_reduction_pct": 12.1
     },
     {
       "category": "Personal Care",
       "baseline_wape": 0.7953,
       "baseline_bias": -0.0252,
-      "lgbm_wape": 0.7288,
-      "lgbm_bias": -0.0223,
+      "lgbm_wape": 0.7283,
+      "lgbm_bias": -0.0243,
       "wape_reduction_pct": 8.4
     },
     {
       "category": "Snacks",
       "baseline_wape": 0.5363,
       "baseline_bias": 0.0296,
-      "lgbm_wape": 0.4578,
+      "lgbm_wape": 0.4579,
       "lgbm_bias": 0.0123,
       "wape_reduction_pct": 14.6
     }
@@ -437,43 +443,43 @@ print(json.dumps(summary, indent=2, default=str))
   "top_features": [
     {
       "feature": "r28",
-      "gain": 43800681.81296635
+      "gain": 43813720.395058155
     },
     {
       "feature": "r7",
-      "gain": 2118397.924232483
+      "gain": 2094675.5314736366
     },
     {
       "feature": "discount_pct",
-      "gain": 1528948.4356908798
+      "gain": 1527595.9874210358
     },
     {
       "feature": "target_dow",
-      "gain": 891901.015917778
+      "gain": 896861.3329372406
     },
     {
       "feature": "sn4_dow",
-      "gain": 597524.0454559326
+      "gain": 669948.9160628319
     },
     {
       "feature": "r28_std",
-      "gain": 343208.0067152977
+      "gain": 336044.03692626953
     },
     {
       "feature": "days_to_next_holiday",
-      "gain": 273562.22022151947
+      "gain": 276393.1688756943
     },
     {
       "feature": "category_code",
-      "gain": 183947.70071792603
+      "gain": 187430.10121631622
     },
     {
       "feature": "next_holiday_code",
-      "gain": 160181.19604492188
+      "gain": 158616.60124444962
     },
     {
-      "feature": "on_promo",
-      "gain": 85768.25899600983
+      "feature": "hol_ratio_sku",
+      "gain": 89969.82108306885
     }
   ]
 }

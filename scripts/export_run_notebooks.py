@@ -1,6 +1,6 @@
 """Export every notebook task of a job run (code + printed outputs) to plain-text Markdown under evidence/notebook_runs/.
 
-Usage: uv run --with databricks-sdk python scripts/export_run_notebooks.py <job_run_id>
+Usage: uv run --with databricks-sdk python scripts/export_run_notebooks.py <job_run_id> [subfolder]
 
 The Jobs API returns each executed notebook as HTML with the notebook model embedded (base64 + URL-encoded JSON);
 this script decodes it and writes the cell sources and their text results, so execution evidence is readable as text.
@@ -44,7 +44,9 @@ def result_text(res) -> str:
     return ""
 
 
-def main(run_id: int):
+def main(run_id: int, sub: str = ""):
+    global OUT
+    OUT = OUT / sub if sub else OUT
     w = WorkspaceClient(profile=PROFILE)
     run = w.jobs.get_run(run_id)
     OUT.mkdir(parents=True, exist_ok=True)
@@ -80,4 +82,4 @@ def main(run_id: int):
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[1]))
+    main(int(sys.argv[1]), sys.argv[2] if len(sys.argv) > 2 else "")

@@ -183,7 +183,7 @@ WHERE routine_schema = '{SCH}' AND routine_name IN ('region_row_filter', 'mask_r
     for rid in [x for x in os.environ.get("DRIFT_RUNS", str(run_id)).split(",") if x]:
         rr = w.jobs.get_run(int(rid))
         params = {p.name: p.value for p in (rr.job_parameters or [])}
-        body += (f"\n### Job run `{rid}` (drift_threshold_pct = {params.get('drift_threshold_pct', '10')}) - {rr.state.result_state.value if rr.state.result_state else ''}\n\n"
+        body += (f"\n### Job run `{rid}` (drift_threshold_pct = {params.get('drift_threshold_pct') or '10, the default'}) - {rr.state.result_state.value if rr.state.result_state else ''}\n\n"
                  "| Task | Result |\n|---|---|\n" + "".join(
                      f"| {t.task_key} | {t.state.result_state.value if t.state.result_state else t.state.life_cycle_state.value} |\n"
                      for t in sorted(rr.tasks, key=lambda t: t.start_time or 9e15) if t.task_key in ("drift_check", "needs_retrain", "train_forecast", "batch_forecast")))
